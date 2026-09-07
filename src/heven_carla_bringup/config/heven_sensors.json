@@ -12,9 +12,9 @@
           "type": "sensor.camera.rgb",
           "id": "left_cam",
           "spawn_point": {
-            "x": 0.80,
+            "x": -0.05,
             "y": 0.23,
-            "z": 0.52,
+            "z": 1.15,
             "roll": 0.0,
             "pitch": 12.0,
             "yaw": 25.0
@@ -30,9 +30,9 @@
           "type": "sensor.camera.rgb",
           "id": "right_cam",
           "spawn_point": {
-            "x": 0.80,
+            "x": -0.05,
             "y": -0.23,
-            "z": 0.52,
+            "z": 1.15,
             "roll": 0.0,
             "pitch": 12.0,
             "yaw": -25.0
