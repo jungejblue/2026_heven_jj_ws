@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>heven_carla_adapter</name>
+  <version>0.2.0</version>
+  <description>Connect CARLA sensors and actuators to the HEVEN autonomy stack.</description>
+  <maintainer email="heven@example.com">HEVEN</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>carla_msgs</exec_depend>
+  <exec_depend>ublox_msgs</exec_depend>
+  <exec_depend>jj_interface</exec_depend>
+  <exec_depend>jj_localization</exec_depend>
+  <exec_depend>jj_planner</exec_depend>
+  <exec_depend>jj_control</exec_depend>
+  <exec_depend>jj_vehicle_driver</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>heven_carla_bringup</exec_depend>
+  <exec_depend>kcity_scenario_manager</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <test_depend>ament_pytest</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>

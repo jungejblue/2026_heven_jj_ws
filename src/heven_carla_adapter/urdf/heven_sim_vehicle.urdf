@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<robot name="heven_sim_vehicle">
+  <!-- Simulation mounts match the bridge JSON (ROS x forward, y left, z up).
+       Initial assumption: CARLA actor reference coincides with base_link.
+       HEVEN uses base_link as the rear-axle ground reference; the real vehicle
+       URDF remains untouched. All distances are m and angles are radians. -->
+  <link name="base_link"/>
+  <link name="front_axle_ground"/>
+  <joint name="base_to_front_axle_ground" type="fixed">
+    <parent link="base_link"/><child link="front_axle_ground"/>
+    <origin xyz="1.38 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="imu_link"/>
+  <joint name="base_to_imu" type="fixed">
+    <parent link="base_link"/><child link="imu_link"/>
+    <origin xyz="0 0 0.20" rpy="0 0 0"/>
+  </joint>
+  <link name="gnss_link"/>
+  <joint name="base_to_gnss" type="fixed">
+    <parent link="base_link"/><child link="gnss_link"/>
+    <origin xyz="-0.13 0 1.45" rpy="0 0 0"/>
+  </joint>
+  <link name="os_sensor"/>
+  <joint name="base_to_lidar_sensor" type="fixed">
+    <parent link="base_link"/><child link="os_sensor"/>
+    <origin xyz="-0.13 0 1.30" rpy="0 0 0"/>
+  </joint>
+  <!-- CARLA points are already in the ROS sensor axes. The real Ouster
+       internal yaw/translation must not be applied to this simulated cloud. -->
+  <link name="os_lidar"/>
+  <joint name="lidar_sensor_to_lidar" type="fixed">
+    <parent link="os_sensor"/><child link="os_lidar"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="left_camera_link"/>
+  <joint name="base_to_left_camera" type="fixed">
+    <parent link="base_link"/><child link="left_camera_link"/>
+    <origin xyz="-0.05 0.23 1.15" rpy="0 0.20943951023931953 0.4363323129985824"/>
+  </joint>
+  <link name="left_optical_frame"/>
+  <joint name="left_camera_to_optical" type="fixed">
+    <parent link="left_camera_link"/><child link="left_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5707963267948966 0 -1.5707963267948966"/>
+  </joint>
+
+  <link name="middle_camera_link"/>
+  <joint name="base_to_middle_camera" type="fixed">
+    <parent link="base_link"/><child link="middle_camera_link"/>
+    <origin xyz="-0.05 0 1.15" rpy="0 -0.05235987755982989 0"/>
+  </joint>
+  <link name="middle_optical_frame"/>
+  <joint name="middle_camera_to_optical" type="fixed">
+    <parent link="middle_camera_link"/><child link="middle_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5707963267948966 0 -1.5707963267948966"/>
+  </joint>
+
+  <link name="right_camera_link"/>
+  <joint name="base_to_right_camera" type="fixed">
+    <parent link="base_link"/><child link="right_camera_link"/>
+    <origin xyz="-0.05 -0.23 1.15" rpy="0 0.20943951023931953 -0.4363323129985824"/>
+  </joint>
+  <link name="right_optical_frame"/>
+  <joint name="right_camera_to_optical" type="fixed">
+    <parent link="right_camera_link"/><child link="right_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5707963267948966 0 -1.5707963267948966"/>
+  </joint>
+</robot>

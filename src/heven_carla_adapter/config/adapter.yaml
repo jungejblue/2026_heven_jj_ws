@@ -1,0 +1,46 @@
+heven_sensor_adapter:
+  ros__parameters:
+    use_sim_time: true
+    host: localhost
+    port: 2000
+    ego_role_name: ego_vehicle
+    origin_latitude_deg: 37.2388873
+    origin_longitude_deg: 126.7729325
+    earth_radius_m: 6378135.0
+    map_frame: map
+    imu_frame: imu_link
+    gnss_frame: gnss_link
+    lidar_frame: os_lidar
+    # Absolute GNSS coordinates are unchanged; HEVEN performs its own projection.
+    h_acc_mm: 10
+    require_sensors_ready: true
+    status_timeout_sec: 0.5
+
+heven_control_adapter:
+  ros__parameters:
+    use_sim_time: true
+    host: localhost
+    port: 2000
+    timeout: 2.0
+    role_name: ego_vehicle
+    require_sensors_ready: true
+    control_period_sec: 0.05
+    steering_center_deg: -5.5
+    steering_min_deg: -14.5
+    steering_max_deg: 3.5
+    max_road_wheel_angle_deg: 30.0
+    max_torque_raw: 3200
+    carla_max_steer_fallback_deg: 30.0
+    compensate_steering_curve: true
+
+heven_traffic_light_adapter:
+  ros__parameters:
+    use_sim_time: true
+    carla_host: localhost
+    carla_port: 2000
+    carla_timeout_sec: 5.0
+    ego_role_name: ego_vehicle
+    output_topic: /jj/perception/traffic_light/state
+    publish_enabled: false
+    publish_rate_hz: 20.0
+    draw_debug_boxes: true

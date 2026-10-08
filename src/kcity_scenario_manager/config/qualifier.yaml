@@ -1,0 +1,262 @@
+carla:
+  host: 127.0.0.1
+  port: 2000
+  timeout_sec: 10.0
+  ego_role_name: ego_vehicle
+
+triggers:
+  START:
+    enabled: true
+    center:
+      x: -42.500
+      y: 395.300
+      z: 0.800
+    extent:
+      x: 4.000
+      y: 1.600
+      z: 0.800
+    yaw_deg: 30.0
+    exit_edge: -y
+    evaluation_point: center
+
+  FINISH:
+    enabled: true
+    center:
+      x: -49.300
+      y: 391.400
+      z: 0.800
+    extent:
+      x: 4.000
+      y: 1.600
+      z: 0.800
+    yaw_deg: 30.0
+    exit_edge: +y
+    evaluation_point: center
+
+  Q_STOP1:
+    enabled: true
+    center:
+      x: -18.600
+      y: 236.000
+      z: 0.400
+    extent:
+      x: 1.600
+      y: 1.600
+      z: 0.400
+    yaw_deg: 30.0
+    exit_edge: -y
+    evaluation_point: front_bumper
+
+  Q_SIGNAL1:
+    enabled: true
+    center:
+      x: 22.1804
+      y: 236.3491
+      z: 1.000
+    extent:
+      x: 6.000
+      y: 18.000
+      z: 1.000
+    yaw_deg: 120.0
+    exit_edge: -y
+    evaluation_point: front_bumper
+
+  Q_STOP2:
+    enabled: true
+    center:
+      x: 63.000
+      y: 258.200
+      z: 0.400
+    extent:
+      x: 1.600
+      y: 1.600
+      z: 0.400
+    yaw_deg: 30.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+
+  Q_SIGNAL2:
+    enabled: true
+    center:
+      x: 58.0567
+      y: 297.7779
+      z: 1.000
+    extent:
+      x: 4.000
+      y: 15.000
+      z: 1.000
+    yaw_deg: 210.0
+    exit_edge: -y
+    evaluation_point: front_bumper
+
+scenario:
+  poll_hz: 20.0
+
+  qualifier:
+    force_red_on_trigger: true
+    min_red_sec: 1.0
+    stop_speed_threshold_mps: 0.1
+    required_stopped_sec_before_green: 0.5
+    reset_after_violation_sec: 1.0
+
+    traffic_lights:
+      Q_TL1:
+        trigger_key: Q_SIGNAL1
+        signal_type: straight
+        actor_id: null
+        location:
+          x: 36.400
+          y: 248.300
+          z: 0.000
+        match_radius_m: 5.0
+
+      Q_TL2:
+        trigger_key: Q_SIGNAL2
+        signal_type: straight
+        actor_id: null
+        location:
+          x: 45.400
+          y: 309.500
+          z: 0.000
+        match_radius_m: 5.0
+
+route_anchors:
+  START:
+    source: trigger
+    trigger_key: START
+  A01:
+    source: location
+    location: {x: -14.60, y: 334.60, z: 0.00}
+  A02:
+    source: location
+    location: {x: -50.50, y: 299.50, z: 0.00}
+  A03:
+    source: location
+    location: {x: -16.80, y: 231.10, z: 0.00}
+  A04:
+    source: location
+    location: {x: 27.60, y: 237.50, z: 0.00}
+  A05:
+    source: location
+    location: {x: 72.00, y: 267.20, z: 0.00}
+    road_id: 31
+    lane_id: -1
+  A06:
+    source: location
+    location: {x: 33.00, y: 342.20, z: 0.00}
+  A07:
+    source: location
+    location: {x: -8.90, y: 329.90, z: 0.00}
+  A08:
+    source: location
+    location: {x: -30.10, y: 356.40, z: 0.00}
+  FINISH:
+    source: trigger
+    trigger_key: FINISH
+
+route_required_triggers:
+- Q_STOP1
+- Q_SIGNAL1
+- Q_STOP2
+- Q_SIGNAL2
+
+route_validation:
+  max_continuity_gap_m: 3.0
+  lane_change_max_gap_m: 8.0
+  lane_change_max_yaw_delta_deg: 45.0
+  segment_detour_max_ratio: 2.5
+  loop_s_bin_m: 5.0
+  loop_min_route_separation_m: 25.0
+
+benchmark:
+  suite: qualifier
+  time_limit_sec: 600
+  output_root: ~/.ros/heven_carla/results
+  start_trigger_key: START
+  finish_trigger_key: FINISH
+  route_csv: routes/qualifier.csv
+  planner_reference_points: []
+  lane_rule:
+    enabled: true
+    first_crossing_penalty_sec: 20
+    continuous_penalty_sec: 20
+    continuous_interval_sec: 5
+    boundary_tolerance_m: 0.05
+    terminate_on_full_exit: false
+  scoring:
+    efficiency:
+      reference_time_sec: null
+    safety:
+      full_lane_exit_multiplier: 0.5
+      collision_dedupe_sec: 1.0
+      collision_actor_multipliers:
+        pedestrian: 0.5
+        vehicle: 0.6
+        static: 0.65
+        other: 0.65
+      collision_severity:
+        delta_v_thresholds_mps:
+        - 0.5
+        - 2.0
+        - 5.0
+        weights:
+          contact: 0.25
+          minor: 0.5
+          moderate: 1.0
+          severe: 1.5
+    speed_rule:
+      enabled: false
+      overspeed_tolerance_mps: 0.5
+      include_in_safety_score: false
+    comfort:
+      lat_accel_abs_max_mps2: 4.89
+      long_accel_min_mps2: -4.05
+      long_accel_max_mps2: 2.4
+      jerk_abs_max_mps3: 8.37
+      long_jerk_abs_max_mps3: 4.13
+      yaw_rate_abs_max_radps: 0.95
+      yaw_accel_abs_max_radps2: 1.93
+    quality_weights:
+      safety: 0.4
+      mission: 0.35
+      efficiency: 0.15
+      comfort: 0.1
+  missions:
+  - id: Q_STOP1
+    name: 첫 번째 교차로 우회전(3초 정지)
+    type: stop
+    trigger_key: Q_STOP1
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    required_stop_sec: 3.0
+    stop_speed_threshold_mps: 0.1
+  - id: Q_SIGNAL1
+    name: 첫 번째 신호등 구간
+    type: traffic_light
+    trigger_key: Q_SIGNAL1
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    light_key: Q_TL1
+    fail_states:
+    - Red
+  - id: Q_STOP2
+    name: 두 번째 교차로 우회전(3초 정지)
+    type: stop
+    trigger_key: Q_STOP2
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    required_stop_sec: 3.0
+    stop_speed_threshold_mps: 0.1
+  - id: Q_SIGNAL2
+    name: 두 번째 신호등 구간
+    type: traffic_light
+    trigger_key: Q_SIGNAL2
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    light_key: Q_TL2
+    fail_states:
+    - Red

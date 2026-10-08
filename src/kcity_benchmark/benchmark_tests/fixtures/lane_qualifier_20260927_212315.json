@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "source_run": "results/qualifier_20260927_212315",
+  "route_sha256": "91be54184807d600d20056f2df7f9387509a257728687dd249da5a64278bd9fc",
+  "map_sha256": "24b6dd916c236891b039cc7aea13390e6c87989c5eff4d7153151efccb24a72b",
+  "actor_type": "vehicle.heven.ev",
+  "actor_bbox": {
+    "extent": {
+      "x": 1.2748459577560425,
+      "y": 0.7395493984222412,
+      "z": 0.6058472394943237
+    },
+    "location": {
+      "x": 0.2552642822265625,
+      "y": -0.0006586170056834817,
+      "z": 0.6056579351425171
+    },
+    "rotation": {
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "roll": 0.0
+    }
+  },
+  "wheel_positions_saved_in_original_run": false,
+  "geometry_evidence": "For cases 2-9 the recovered curved route-lane boundary contains the complete recorded vehicle bbox with positive clearance. Cases 1 and 10 have zero bbox samples more than 1 mm outside the route-authorized adjacent-lane union. Any wheel inside that bbox is therefore inside the allowed corridor.",
+  "cases": [
+    {
+      "case": 1,
+      "classification": "B",
+      "reason": "정상 CHANGELANELEFT: route 0→1, 3/2/-2→-1. 단일 차선 경계 횡단을 즉시 벌점 처리.",
+      "sim_time": 192.484,
+      "ego_pose": {
+        "x": -42.1637,
+        "y": 393.5854,
+        "z": 0.0005,
+        "yaw_deg": -90.0857
+      },
+      "route": {
+        "index": 0,
+        "road_id": 3,
+        "section_id": 2,
+        "lane_id": -2,
+        "opendrive_s": 66.400788,
+        "road_option": "CHANGELANELEFT"
+      },
+      "old_selected_lane": {
+        "road_id": 3,
+        "section_id": 2,
+        "lane_id": -1,
+        "junction": false
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": null,
+      "allowed_lane_change_union_outside_over_1mm_count": 0
+    },
+    {
+      "case": 2,
+      "classification": "D",
+      "reason": "junction 464: 경로 road 470 대신 겹치는 road 468 선택.",
+      "sim_time": 209.634,
+      "ego_pose": {
+        "x": -15.2594,
+        "y": 331.9041,
+        "z": 0.0005,
+        "yaw_deg": -92.1726
+      },
+      "route": {
+        "index": 64,
+        "road_id": 470,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 4.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 468,
+        "section_id": 0,
+        "lane_id": -1,
+        "junction": true
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.22802171692860917
+    },
+    {
+      "case": 3,
+      "classification": "D",
+      "reason": "junction 464: 경로 road 470 대신 겹치는 road 476 선택. 1 sample.",
+      "sim_time": 210.184,
+      "ego_pose": {
+        "x": -15.6666,
+        "y": 329.7607,
+        "z": 0.0006,
+        "yaw_deg": -105.4073
+      },
+      "route": {
+        "index": 66,
+        "road_id": 470,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 6.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 476,
+        "section_id": 0,
+        "lane_id": 1,
+        "junction": true
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.16611108978370015
+    },
+    {
+      "case": 4,
+      "classification": "D",
+      "reason": "junction 464: 경로 road 470 대신 겹치는 road 474 선택.",
+      "sim_time": 210.684,
+      "ego_pose": {
+        "x": -16.5023,
+        "y": 327.9461,
+        "z": 0.0006,
+        "yaw_deg": -119.1233
+      },
+      "route": {
+        "index": 67,
+        "road_id": 470,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 7.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 474,
+        "section_id": 0,
+        "lane_id": 1,
+        "junction": true
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.11355401577182955
+    },
+    {
+      "case": 5,
+      "classification": "D",
+      "reason": "road 77 급곡선의 실제 곡선 경계를 단일 접선 띠로 근사하여 오판정.",
+      "sim_time": 289.384,
+      "ego_pose": {
+        "x": 29.821,
+        "y": 343.4877,
+        "z": 0.0005,
+        "yaw_deg": 158.8709
+      },
+      "route": {
+        "index": 383,
+        "road_id": 77,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 39.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 77,
+        "section_id": 0,
+        "lane_id": -1,
+        "junction": false
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.1484512119553567
+    },
+    {
+      "case": 6,
+      "classification": "D",
+      "reason": "동일 급곡선에서 yaw projection 문턱 재횡단. 0.20초 후 재과금, 1 sample.",
+      "sim_time": 289.684,
+      "ego_pose": {
+        "x": 28.6615,
+        "y": 343.831,
+        "z": 0.0005,
+        "yaw_deg": 164.7574
+      },
+      "route": {
+        "index": 385,
+        "road_id": 77,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 41.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 77,
+        "section_id": 0,
+        "lane_id": -1,
+        "junction": false
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.1272604930497936
+    },
+    {
+      "case": 7,
+      "classification": "D",
+      "reason": "junction 464 재통과: 경로 road 468 대신 road 471 선택.",
+      "sim_time": 300.534,
+      "ego_pose": {
+        "x": -11.2727,
+        "y": 330.6546,
+        "z": 0.0005,
+        "yaw_deg": 176.4761
+      },
+      "route": {
+        "index": 428,
+        "road_id": 468,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 4.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 471,
+        "section_id": 0,
+        "lane_id": 1,
+        "junction": true
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.21477253004637276
+    },
+    {
+      "case": 8,
+      "classification": "D",
+      "reason": "junction 464 재통과: 경로 road 468 대신 road 476 선택. 1 sample.",
+      "sim_time": 301.284,
+      "ego_pose": {
+        "x": -14.1182,
+        "y": 331.4522,
+        "z": 0.0005,
+        "yaw_deg": 156.8858
+      },
+      "route": {
+        "index": 430,
+        "road_id": 468,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 6.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 476,
+        "section_id": 0,
+        "lane_id": 1,
+        "junction": true
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.11793245484991721
+    },
+    {
+      "case": 9,
+      "classification": "D",
+      "reason": "junction 464 재통과: 경로 road 468 대신 road 470 선택.",
+      "sim_time": 301.484,
+      "ego_pose": {
+        "x": -14.8333,
+        "y": 331.8417,
+        "z": 0.0005,
+        "yaw_deg": 151.3209
+      },
+      "route": {
+        "index": 431,
+        "road_id": 468,
+        "section_id": 0,
+        "lane_id": -1,
+        "opendrive_s": 7.0,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 470,
+        "section_id": 0,
+        "lane_id": -1,
+        "junction": true
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": 0.09079870298281678
+    },
+    {
+      "case": 10,
+      "classification": "B",
+      "reason": "정상 CHANGELANERIGHT: route 460→461, 3/2/1→2. 시작은 lookahead로 index 459부터.",
+      "sim_time": 308.484,
+      "ego_pose": {
+        "x": -29.739,
+        "y": 354.7337,
+        "z": 0.0006,
+        "yaw_deg": 137.7464
+      },
+      "route": {
+        "index": 459,
+        "road_id": 3,
+        "section_id": 2,
+        "lane_id": 1,
+        "opendrive_s": 107.946781,
+        "road_option": "LANEFOLLOW"
+      },
+      "old_selected_lane": {
+        "road_id": 3,
+        "section_id": 2,
+        "lane_id": 1,
+        "junction": false
+      },
+      "expected_violation": false,
+      "expected_wheel_out_count": 0,
+      "correct_route_footprint_clearance_m": null,
+      "allowed_lane_change_union_outside_over_1mm_count": 0
+    }
+  ]
+}

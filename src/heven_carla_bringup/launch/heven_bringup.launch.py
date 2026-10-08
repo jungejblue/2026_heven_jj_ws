@@ -25,14 +25,18 @@ def generate_launch_description() -> LaunchDescription:
     package_share = Path(get_package_share_directory("heven_carla_bringup"))
 
     bridge_config = str(package_share / "config" / "bridge.yaml")
-    vehicle_config = str(package_share / "config" / "vehicle_only.json")
-    sensor_config = str(package_share / "config" / "heven_sensors.json")
+    default_vehicle_config = str(package_share / "config" / "vehicle_only.json")
+    default_sensor_config = str(package_share / "config" / "heven_sensors.json")
     rviz_config = str(package_share / "config" / "heven_sensors.rviz")
 
     launch_rviz = LaunchConfiguration("launch_rviz")
     startup_delay = LaunchConfiguration("startup_delay")
     warmup_seconds = LaunchConfiguration("warmup_seconds")
     discard_complete_sets = LaunchConfiguration("discard_complete_sets")
+    sensor_config = LaunchConfiguration("sensor_config")
+    vehicle_config = LaunchConfiguration("vehicle_config")
+    host = LaunchConfiguration("host")
+    port = LaunchConfiguration("port")
 
     bridge = Node(
         package="carla_ros_bridge",
@@ -40,7 +44,10 @@ def generate_launch_description() -> LaunchDescription:
         name="carla_ros_bridge",
         output="screen",
         emulate_tty=True,
-        parameters=[bridge_config],
+        parameters=[bridge_config, {
+            "host": ParameterValue(host, value_type=str),
+            "port": ParameterValue(port, value_type=int),
+        }],
         on_exit=EmitEvent(
             event=Shutdown(reason="CARLA ROS Bridge exited")
         ),
@@ -149,6 +156,18 @@ def generate_launch_description() -> LaunchDescription:
     return LaunchDescription(
         [
             DeclareLaunchArgument(
+                "vehicle_config",
+                default_value=default_vehicle_config,
+                description="CARLA vehicle object JSON; the default preserves the original spawn pose.",
+            ),
+            DeclareLaunchArgument(
+                "sensor_config",
+                default_value=default_sensor_config,
+                description="CARLA sensor object JSON; the default preserves the original bringup.",
+            ),
+            DeclareLaunchArgument("host", default_value="localhost"),
+            DeclareLaunchArgument("port", default_value="2000"),
+            DeclareLaunchArgument(
                 "launch_rviz",
                 default_value="true",
                 description="Launch RViz with the HEVEN sensor configuration.",
@@ -181,3 +200,4 @@ def generate_launch_description() -> LaunchDescription:
             ),
         ]
     )
+

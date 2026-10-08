@@ -1,0 +1,17 @@
+/**:
+  ros__parameters:
+    # Runtime-only downstream contract probe at canonical qualifier Q_SIGNAL1.
+    # JJ's simulation localization is approximately CARLA (x, -y); the 5 m
+    # radius covers the base_link/front-axle offset without driving the ego.
+    traffic_enabled: true
+    traffic_stop_points: [22.18, -236.35]
+    traffic_stop_offset_m: 0.0
+    traffic_stop_radius_m: 5.0
+    traffic_look_offset_m: 0.0
+    traffic_look_radius_m: 5.0
+    traffic_signal_timeout_sec: 2.0
+    traffic_go_signals: [LEFT]
+    traffic_use_right_light: [false]
+    rturn_enabled: false
+    obstacle_enabled: false
+    brake_release_seconds: 0.1

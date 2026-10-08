@@ -1,0 +1,25 @@
+carla:
+  host: 127.0.0.1
+  port: 2000
+  timeout_sec: 10.0
+  ego_role_name: ego_vehicle
+
+triggers:
+  Q_SIGNAL1:
+    enabled: true
+    center: {x: 22.1804, y: 236.3491, z: 1.0}
+    extent: {x: 2.0, y: 2.0, z: 1.0}
+    yaw_deg: 120.0
+    exit_edge: -y
+    evaluation_point: front_bumper
+
+scenario:
+  poll_hz: 20.0
+  qualifier:
+    traffic_lights:
+      Q_TL1:
+        trigger_key: Q_SIGNAL1
+        signal_type: left
+        actor_id: null
+        location: {x: 36.4, y: 248.3, z: 0.0}
+        match_radius_m: 5.0

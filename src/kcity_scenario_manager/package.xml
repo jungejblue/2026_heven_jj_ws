@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>kcity_scenario_manager</name>
+  <version>0.5.0</version>
+  <description>K-City qualifier/final scenario management and ROS Bridge ego control.</description>
+
+  <maintainer email="maintainer@example.com">K-City Scenario Team</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>carla_msgs</exec_depend>
+  <exec_depend>carla_ros_bridge</exec_depend>
+  <exec_depend>heven_carla_bringup</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>ublox_msgs</exec_depend>
+  <exec_depend>jj_interface</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-networkx</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <test_depend>ament_pytest</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

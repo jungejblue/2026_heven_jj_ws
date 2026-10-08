@@ -351,3 +351,8 @@ carla_spawn_objects/carla_spawn_objects
 ```text
 share/carla_spawn_objects/launch/carla_spawn_objects.launch.py
 ```
+
+
+## HEVEN autonomy and integrated K-City scenarios
+
+The optional `heven_carla_adapter` connects the original HEVEN localization/control packages using their existing 2 m initialization drive. No HEVEN source patch is required. `kcity_scenario_manager` and `kcity_benchmark` are maintained inside this repository under `src/`. Follow [the integration guide](src/heven_carla_adapter/docs/HEVEN_INTERFACE.md). The original `heven_bringup.launch.py` retains its default sensor-only profile.

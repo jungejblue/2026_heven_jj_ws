@@ -1,0 +1,315 @@
+carla:
+  host: 127.0.0.1
+  port: 2000
+  timeout_sec: 10.0
+  ego_role_name: ego_vehicle
+triggers:
+  START:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: center
+  F01:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  F02:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  F03:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  F04:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  F05:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  F06:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  F07:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  F08:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: front_bumper
+  FINISH:
+    enabled: false
+    center:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    extent:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    yaw_deg: 0.0
+    exit_edge: +x
+    evaluation_point: center
+scenario:
+  poll_hz: 20.0
+  final:
+    green_pass_threshold: 3
+    min_red_sec: 1.0
+    stop_speed_threshold_mps: 0.1
+    required_stopped_sec_before_green: 0.5
+    reset_after_violation_sec: 1.0
+    traffic_lights:
+    - key: F01_TL
+      trigger_key: F01
+      signal_type: straight
+      actor_id: null
+      location:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      match_radius_m: 5.0
+    - key: F02_TL
+      trigger_key: F02
+      signal_type: straight
+      actor_id: null
+      location:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      match_radius_m: 5.0
+    - key: F03_TL
+      trigger_key: F03
+      signal_type: left
+      actor_id: null
+      location:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      match_radius_m: 5.0
+    - key: F05_TL
+      trigger_key: F05
+      signal_type: straight
+      actor_id: null
+      location:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      match_radius_m: 5.0
+    obstacles:
+    - enabled: false
+      blueprint: ''
+      transform:
+        location:
+          x: 0.0
+          y: 0.0
+          z: 0.0
+        rotation:
+          roll: 0.0
+          pitch: 0.0
+          yaw: 0.0
+benchmark:
+  suite: final
+  time_limit_sec: 900
+  output_root: ~/.ros/heven_carla/results
+  start_trigger_key: START
+  finish_trigger_key: FINISH
+  route_points: []
+  planner_reference_points: []
+  lane_rule:
+    enabled: true
+    first_crossing_penalty_sec: 20
+    continuous_penalty_sec: 20
+    continuous_interval_sec: 5
+    boundary_tolerance_m: 0.05
+    terminate_on_full_exit: false
+  scoring:
+    efficiency:
+      reference_time_sec: null
+    safety:
+      full_lane_exit_multiplier: 0.5
+      collision_dedupe_sec: 1.0
+      collision_actor_multipliers:
+        pedestrian: 0.5
+        vehicle: 0.6
+        static: 0.65
+        other: 0.65
+      collision_severity:
+        delta_v_thresholds_mps:
+        - 0.5
+        - 2.0
+        - 5.0
+        weights:
+          contact: 0.25
+          minor: 0.5
+          moderate: 1.0
+          severe: 1.5
+    speed_rule:
+      enabled: false
+      overspeed_tolerance_mps: 0.5
+      include_in_safety_score: false
+    comfort:
+      lat_accel_abs_max_mps2: 4.89
+      long_accel_min_mps2: -4.05
+      long_accel_max_mps2: 2.4
+      jerk_abs_max_mps3: 8.37
+      long_jerk_abs_max_mps3: 4.13
+      yaw_rate_abs_max_radps: 0.95
+      yaw_accel_abs_max_radps2: 1.93
+    quality_weights:
+      safety: 0.4
+      mission: 0.35
+      efficiency: 0.15
+      comfort: 0.1
+  missions:
+  - id: F01
+    name: 직진 후 교차로(신호O)
+    type: traffic_light
+    trigger_key: F01
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    light_key: F01_TL
+    fail_states:
+    - Red
+  - id: F02
+    name: 교차로 직진(신호O)
+    type: traffic_light
+    trigger_key: F02
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    light_key: F02_TL
+    fail_states:
+    - Red
+  - id: F03
+    name: 교차로 좌회전(신호O)
+    type: traffic_light
+    trigger_key: F03
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    light_key: F03_TL
+    fail_states:
+    - Red
+  - id: F04
+    name: 교차로 좌회전(신호X)
+    type: checkpoint
+    trigger_key: F04
+    penalty_sec: 0
+    scored: false
+    score_weight: 1.0
+  - id: F05
+    name: 교차로 직진(신호O)
+    type: traffic_light
+    trigger_key: F05
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0
+    light_key: F05_TL
+    fail_states:
+    - Red
+  - id: F06
+    name: 교차로 좌회전(신호X)
+    type: checkpoint
+    trigger_key: F06
+    penalty_sec: 0
+    scored: false
+    score_weight: 1.0
+  - id: F07
+    name: 교차로 우회전(신호X)
+    type: checkpoint
+    trigger_key: F07
+    penalty_sec: 0
+    scored: false
+    score_weight: 1.0
+  - id: F08
+    name: 소형 장애물
+    type: obstacle
+    trigger_key: F08
+    penalty_sec: 120
+    scored: true
+    score_weight: 1.0

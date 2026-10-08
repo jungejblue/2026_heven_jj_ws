@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>kcity_benchmark</name>
+  <version>0.5.0</version>
+  <description>K-City competition benchmark with time-based penalties.</description>
+
+  <maintainer email="heven@example.com">HEVEN</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>python3-pygame</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>kcity_scenario_manager</exec_depend>
+  <exec_depend>heven_carla_bringup</exec_depend>
+  <exec_depend>heven_carla_adapter</exec_depend>
+  <exec_depend>carla_ros_bridge</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
