@@ -27,7 +27,7 @@ def generate_launch_description() -> LaunchDescription:
     bridge_config = str(package_share / "config" / "bridge.yaml")
     default_vehicle_config = str(package_share / "config" / "vehicle_only.json")
     default_sensor_config = str(package_share / "config" / "heven_sensors.json")
-    rviz_config = str(package_share / "config" / "heven_sensors.rviz")
+    default_rviz_config = str(package_share / "config" / "heven_sensors.rviz")
 
     launch_rviz = LaunchConfiguration("launch_rviz")
     startup_delay = LaunchConfiguration("startup_delay")
@@ -35,6 +35,7 @@ def generate_launch_description() -> LaunchDescription:
     discard_complete_sets = LaunchConfiguration("discard_complete_sets")
     sensor_config = LaunchConfiguration("sensor_config")
     vehicle_config = LaunchConfiguration("vehicle_config")
+    rviz_config = LaunchConfiguration("rviz_config")
     host = LaunchConfiguration("host")
     port = LaunchConfiguration("port")
 
@@ -167,6 +168,11 @@ def generate_launch_description() -> LaunchDescription:
             ),
             DeclareLaunchArgument("host", default_value="localhost"),
             DeclareLaunchArgument("port", default_value="2000"),
+            DeclareLaunchArgument(
+                "rviz_config",
+                default_value=default_rviz_config,
+                description="RViz display profile; the default shows raw CARLA sensors.",
+            ),
             DeclareLaunchArgument(
                 "launch_rviz",
                 default_value="true",

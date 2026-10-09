@@ -5,19 +5,17 @@ from __future__ import annotations
 import argparse
 import math
 from pathlib import Path
-import re
+import xml.etree.ElementTree as ET
 
 from ...route_csv import read_route_csv, route_sha256
 
 
 CANONICAL_MAP = 'heven_kcity/Maps/kcity/kcity'
-ORIGIN_LATITUDE_DEG = 37.24273
-ORIGIN_LONGITUDE_DEG = 126.77363
 EARTH_RADIUS_M = 6378135.0  # jj_planner and jj_localization source
 
 
-def jj_local_xy(latitude, longitude, origin_lat=ORIGIN_LATITUDE_DEG,
-                origin_lon=ORIGIN_LONGITUDE_DEG):
+def jj_local_xy(latitude, longitude, origin_lat, origin_lon):
+    """Project absolute GNSS using the caller's explicit JJ map origin."""
     return (
         (longitude-origin_lon)*math.cos(math.radians(origin_lat))
         *math.pi*EARTH_RADIUS_M/180.0,
@@ -26,22 +24,43 @@ def jj_local_xy(latitude, longitude, origin_lat=ORIGIN_LATITUDE_DEG,
 
 
 def validate_map(carla_map):
+    """Check supported georeferencing without pinning a map revision's origin.
+
+    CARLA supplies the actual absolute geolocation. Route road/lane/s metadata
+    is checked separately by reconstruct_csv_waypoint before conversion.
+    """
     if carla_map.name != CANONICAL_MAP:
         raise RuntimeError(f'expected canonical map {CANONICAL_MAP}, got {carla_map.name}')
-    match = re.search(r'<geoReference>\s*<!\[CDATA\[(.*?)\]\]>\s*</geoReference>',
-                      carla_map.to_opendrive(), re.DOTALL)
-    if not match:
+    try:
+        root = ET.fromstring(carla_map.to_opendrive())
+    except ET.ParseError as exc:
+        raise RuntimeError('OpenDRIVE XML is invalid; cannot read geoReference') from exc
+    reference_element = root.find('header/geoReference')
+    if reference_element is None or not (reference_element.text or '').strip():
         raise RuntimeError('OpenDRIVE geoReference is missing')
-    tokens = match.group(1).split()
-    params = dict(token[1:].split('=', 1) for token in tokens if token.startswith('+') and '=' in token)
-    expected = {'proj': 'tmerc', 'lat_0': str(ORIGIN_LATITUDE_DEG),
-                'lon_0': str(ORIGIN_LONGITUDE_DEG), 'k': '1',
-                'x_0': '0', 'y_0': '0', 'datum': 'WGS84',
-                'units': 'm', 'vunits': 'm'}
+    reference = reference_element.text.strip()
+    tokens = reference.split()
+    params = {}
+    for token in tokens:
+        if token.startswith('+') and '=' in token:
+            key, value = token[1:].split('=', 1)
+            if key in params:
+                raise RuntimeError(f'duplicate geoReference parameter: {key}')
+            params[key] = value
+    expected = {'proj': 'tmerc', 'datum': 'WGS84', 'units': 'm', 'vunits': 'm'}
     if (any(params.get(key) != value for key, value in expected.items())
             or '+no_defs' not in tokens):
-        raise RuntimeError(f'unexpected canonical map geoReference: {match.group(1)}')
-    return match.group(1)
+        raise RuntimeError(f'unsupported canonical map geoReference: {reference}')
+    try:
+        numeric = {key: float(params[key]) for key in ('lat_0', 'lon_0', 'k', 'x_0', 'y_0')}
+    except (KeyError, ValueError) as exc:
+        raise RuntimeError(f'invalid numeric geoReference parameters: {reference}') from exc
+    if (not all(math.isfinite(value) for value in numeric.values())
+            or not -90 < numeric['lat_0'] < 90
+            or not -180 <= numeric['lon_0'] <= 180
+            or numeric['k'] != 1.0 or numeric['x_0'] != 0.0 or numeric['y_0'] != 0.0):
+        raise RuntimeError(f'invalid or unsupported geoReference parameters: {reference}')
+    return reference
 
 
 def convert_rows(carla_map, rows, expected_points):

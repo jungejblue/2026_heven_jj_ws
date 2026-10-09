@@ -1,64 +1,87 @@
-# HEVEN 센서 Config 수정 가이드
+# 센서 설정·좌표·TF 가이드
 
-## 1. 파일별 역할
+실행 모드에 따라 사용하는 센서 JSON과 RViz 프로필이 다릅니다.
+먼저 launch에서 실제로 읽는 파일을 선택합니다.
 
-| 파일 | 수정 대상 |
+## 설정 파일 선택
+
+아래 경로는 저장소 루트 기준입니다.
+
+| 실행 모드·대상 | 설정 파일 |
 |---|---|
-| `config/heven_sensors.json` | 센서 타입, ID, 수량, 장착 위치, 해상도, FOV, 주기, 노이즈 |
-| `config/vehicle_only.json` | 차량 타입·ID와 최초 스폰 위치 |
-| `config/bridge.yaml` | CARLA 주소, 맵, synchronous mode, world 시간 간격 |
-| `config/heven_sensors.rviz` | RViz 표시 토픽과 시각화 옵션 |
-| `heven_carla_bringup/topic_contract.py` | 코드가 기대하는 고정 ROS 토픽 |
-| `heven_carla_bringup/sensor_gate.py` | readiness 판정에 포함되는 센서와 메시지 타입 |
-| `heven_carla_bringup/readiness_monitor.py` | 센서별 수신 주파수 모니터링 |
-| `heven_carla_bringup/config_validator.py` | 허용 센서 ID·타입·주기 검증 |
+| 센서 전용 기본 센서 | `src/heven_carla_bringup/config/heven_sensors.json` |
+| 센서 전용 기본 차량 스폰 | `src/heven_carla_bringup/config/vehicle_only.json` |
+| 센서 전용 RViz | `src/heven_carla_bringup/config/heven_sensors.rviz` |
+| 헤븐 자율주행·시뮬레이션 센서 | `src/heven_carla_adapter/config/heven_sim_sensors.json` |
+| 헤븐 자율주행 차량 스폰 | `src/heven_carla_adapter/config/heven_sim_vehicle_qualifying.json` 또는 `heven_sim_vehicle_final.json` |
+| 헤븐 시뮬레이션 정적 TF | `src/heven_carla_adapter/urdf/heven_sim_vehicle.urdf` |
+| 헤븐 자율주행 RViz | `src/heven_carla_adapter/config/heven_autonomy.rviz` |
+| 서버·맵·world 주기 | `src/heven_carla_bringup/config/bridge.yaml` |
+| 메시지 변환·GNSS 정확도·제어 보정 | `src/heven_carla_adapter/config/adapter.yaml` |
 
-기존 센서의 파라미터만 바꿀 때는 대부분 `heven_sensors.json`만 수정한다. 센서 ID,
-타입, 수량 또는 주기 구조를 바꿀 때는 코드 계약 파일까지 함께 수정한다.
+`heven_bringup.launch.py`는 센서 전용 기본 파일을 읽습니다.
+`heven_simulation.launch.py`와 `heven_autonomy.launch.py`는 어댑터의
+시뮬레이션 파일을 읽습니다. `heven_sensors.json`만 수정해도 자율주행 설정이 바뀌지는 않습니다.
+사용자 파일은 launch의 `sensor_config`, `vehicle_config`, `rviz_config`로 지정할 수 있습니다.
 
-## 2. 좌표와 단위
+시뮬레이션 JSON은 센서 전용 JSON과 동일한 실제 센서 6개를 유지하며 pseudo TF/odometry를
+제외합니다. 헤븐 localization과 URDF publisher가 TF를 담당하기 때문입니다.
 
-`carla_spawn_objects` JSON은 차량 Actor 원점 기준 ROS 오른손 좌표를 사용한다.
+## 현재 센서 기하
 
-| 값 | 의미 | 단위 |
-|---|---|---|
-| `x` | 차량 전방 | m |
-| `y` | 차량 좌측 | m |
-| `z` | 위쪽 | m |
-| `roll` | x축 회전 | degree |
-| `pitch` | y축 회전 | degree |
-| `yaw` | z축 회전 | degree |
+JSON의 장착 위치는 차량 actor 원점 기준 ROS 좌표이며 길이는 m, 각도는 degree입니다.
 
-현재 Bridge 변환 관계는 다음과 같다.
+| 센서 ID | x, y, z (m) | roll, pitch, yaw (deg) | 헤븐 프레임 |
+|---|---|---|---|
+| `imu` | `0, 0, 0.20` | `0, 0, 0` | `imu_link` |
+| `gnss` | `-0.13, 0, 1.45` | `0, 0, 0` | `gnss_link` |
+| `lidar` | `-0.13, 0, 1.30` | `0, 0, 0` | `os_sensor → os_lidar` |
+| `left_cam` | `-0.05, 0.23, 1.15` | `0, 12, 25` | `left_camera_link → left_optical_frame` |
+| `front_cam` | `-0.05, 0, 1.15` | `0, -3, 0` | `middle_camera_link → middle_optical_frame` |
+| `right_cam` | `-0.05, -0.23, 1.15` | `0, 12, -25` | `right_camera_link → right_optical_frame` |
 
-```text
-x_ros     =  x_carla
-y_ros     = -y_carla
-z_ros     =  z_carla
-roll_ros  =  roll_carla
-pitch_ros = -pitch_carla
-yaw_ros   = -yaw_carla
-```
+좌우 카메라도 계속 부착·발행합니다. 중앙 영상은 신호등 확인에 사용하며
+`front_cam` 입력을 헤븐의 `middle` 토픽으로 연결합니다.
 
-따라서 현재 JSON에서 `y>0`은 좌측, `yaw>0`은 좌측을 향하도록 사용한다. 카메라를
-아래로 숙이는 CARLA pitch가 음수라면 JSON pitch는 양수가 된다. 부호는 수치만으로
-확정하지 말고 첫 실행 영상과 TF를 함께 확인한다.
+시뮬레이션 센서 위치나 각도를 바꾸면 `heven_sim_sensors.json`과
+`heven_sim_vehicle.urdf`를 함께 수정합니다. JSON의 각도는 degree,
+URDF의 rpy는 radian입니다. optical joint의 `(-π/2,0,-π/2)` 회전은
+카메라 장착 각도와 별도로 유지합니다. `os_sensor → os_lidar`는 identity입니다.
+차량 기준점은 `base_link`, 전륜 기준점 `front_axle_ground`의 x는 1.38 m입니다.
 
-## 3. 카메라 수정
+## CARLA와 ROS 좌표
 
-예시:
+`carla_spawn_objects` JSON은 x 전방, y 좌측, z 위쪽의 ROS 좌표입니다.
+시나리오 YAML과 CARLA native CSV는 CARLA 원래 좌표를 사용합니다.
 
-```json
+| 성분 | CARLA native → spawn JSON |
+|---|---|
+| x | 그대로 |
+| y | 부호 반전 |
+| z | 그대로 |
+| roll | 그대로 |
+| pitch | 부호 반전 |
+| yaw | 부호 반전 |
+
+예를 들어 CARLA API에서 얻은 차량 위치를 JSON에 옮길 때 y와 yaw 부호를 바꿉니다.
+이미 ROS 좌표인 JSON이나 헤븐 센서 메시지에 같은 변환을 다시 적용하지 않습니다.
+헤븐 map 좌표는 절대 GNSS를 헤븐 원점으로 투영한 ENU이며, 이 부호 변환만으로
+CARLA world XY와 동일해지는 것은 아닙니다.
+
+## 카메라 해상도와 FOV
+
+현재 세 카메라는 `1280×720`, 수평 FOV `70.42°`,
+`sensor_tick=0.0`, `gamma=2.2`, postprocess 활성 상태입니다.
+
+왼쪽 카메라의 현재 예시는 다음과 같습니다.
+
+~~~json
 {
   "type": "sensor.camera.rgb",
   "id": "left_cam",
   "spawn_point": {
-    "x": 0.80,
-    "y": 0.23,
-    "z": 0.52,
-    "roll": 0.0,
-    "pitch": 12.0,
-    "yaw": 25.0
+    "x": -0.05, "y": 0.23, "z": 1.15,
+    "roll": 0.0, "pitch": 12.0, "yaw": 25.0
   },
   "image_size_x": 1280,
   "image_size_y": 720,
@@ -67,205 +90,127 @@ yaw_ros   = -yaw_carla
   "gamma": 2.2,
   "enable_postprocess_effects": true
 }
-```
+~~~
 
-| 키 | 수정 기준 |
+CARLA `fov`는 수평 FOV입니다. 영상 폭 W와 수평 초점거리 fx를 알면
+`HFOV = 2 × atan(W / (2 × fx))`로 계산하고 degree로 바꿉니다.
+해상도·FOV 변경 후 영상과 CameraInfo의 크기·intrinsic을 함께 확인합니다.
+
+카메라 ID를 바꾸면 `/carla/ego_vehicle/<id>/image`와 `camera_info`도 바뀝니다.
+헤븐 토픽과 optical 프레임 대응은 센서 어댑터에서 설정합니다.
+
+## LiDAR
+
+현재 설정은 OS1-32의 1024 columns, 20 Hz 운용을 근사합니다.
+
+~~~json
+{
+  "channels": 32,
+  "range": 120.0,
+  "points_per_second": 655360,
+  "rotation_frequency": 20.0,
+  "upper_fov": 22.5,
+  "lower_fov": -22.5,
+  "horizontal_fov": 360.0,
+  "sensor_tick": 0.0
+}
+~~~
+
+`points_per_second = channels × columns_per_rotation × rotation_frequency`이므로
+현재 값은 `32 × 1024 × 20 = 655360`입니다. 채널 수·수평 포인트 수·회전수를
+변경할 때 세 값의 관계를 함께 계산합니다.
+CARLA ray-cast LiDAR의 균일 수직 채널은 실제 Ouster beam calibration이나
+multi-return을 모두 재현하지 않습니다.
+
+## IMU와 GNSS
+
+현재 IMU의 가속도·각속도 noise/bias와 GNSS의 위치 noise/bias는 모두 0입니다.
+장착 위치 변경 시 두 시뮬레이션 기하 파일을 함께 수정합니다.
+
+| 센서 | 주요 attribute |
 |---|---|
-| `spawn_point` | 차량 모델에서 측정한 카메라 optical center와 장착 각도 |
-| `image_size_x/y` | 실제 인지 노드 입력 또는 실제 카메라 운용 해상도 |
-| `fov` | CARLA의 수평 FOV. 실제 사양이 대각 FOV라면 수평 FOV로 변환 |
-| `sensor_tick` | `0.0`이면 현재 world tick마다 발행 |
-| `gamma` | 영상 밝기 응답 검증 후 설정 |
-| `enable_postprocess_effects` | 재현성 우선이면 `false`, 시각적 효과가 필요하면 `true` |
+| IMU | `noise_accel_stddev_x/y/z`, `noise_gyro_stddev_x/y/z`, `noise_gyro_bias_x/y/z`, `noise_seed` |
+| GNSS | `noise_alt_bias/stddev`, `noise_lat_bias/stddev`, `noise_lon_bias/stddev`, `noise_seed` |
 
-초점거리 `fx`와 영상 폭 `W`를 알면 수평 FOV는 다음과 같다.
+노이즈 density를 표준편차 필드에 바로 넣지 않고 샘플링 주기와 단위를 확인합니다.
+센서 전용 모드는 raw GNSS만 제공합니다. 헤븐 어댑터는 절대 GNSS와 실제 차량 속도로
+NavPVT·velocity를 만들고 가상 RTK FIX를 제공합니다. NTRIP/RTCM 통신은 실행하지 않습니다.
+`adapter.yaml`의 `h_acc_mm=10`은 정확도 메타데이터이며 위치 노이즈를 추가하지 않습니다.
 
-```text
-HFOV = 2 * atan(W / (2 * fx))
-```
+지도 georeference나 GNSS 위치를 헤븐 원점에 맞춰 덮어쓰지 않습니다.
+원점과 메시지 단위는 [헤븐 인터페이스](../../heven_carla_adapter/docs/HEVEN_INTERFACE.md)를 따릅니다.
 
-카메라 `id`를 바꾸면 `/carla/ego_vehicle/<id>/image`와
-`/carla/ego_vehicle/<id>/camera_info`도 같이 바뀐다.
+## 센서 주기와 ID 변경
 
-## 4. LiDAR 수정
+`bridge.yaml`의 `fixed_delta_seconds=0.05`는 20 Hz world를 의미합니다.
+현재 실제 센서 6개는 모두 `sensor_tick=0.0`으로 world tick마다 발행합니다.
+`sensor_gate`는 세 카메라 이미지·LiDAR·IMU·GNSS의 동일 timestamp를 확인합니다.
 
-현재 설정은 보유한 OS1-32를 1024 columns, 20 Hz로 운용하는 조건을 근사한다.
+| 설정 | 현재 구조에서의 의미 |
+|---|---|
+| `sensor_tick=0.0` | 기본 20 Hz, 센서 준비 판정과 일치 |
+| `sensor_tick=0.05` | 20 Hz 요청이지만 기본 validator의 0.0 규칙과 다름 |
+| `sensor_tick=0.10` | 10 Hz, 느린 센서 timestamp에서만 완전 세트가 가능 |
+| `sensor_tick=0.01` | world가 20 Hz이면 실제 100 Hz로 발행할 수 없음 |
 
-```json
-"channels": 32,
-"range": 120.0,
-"points_per_second": 655360,
-"rotation_frequency": 20.0,
-"upper_fov": 22.5,
-"lower_fov": -22.5,
-"horizontal_fov": 360.0,
-"sensor_tick": 0.0
-```
+다른 주기나 센서 ID·수량을 사용하려면 JSON만 바꾸지 않고 다음 계약을 함께 확인합니다.
 
-`points_per_second`의 초기 계산은 다음 관계를 사용한다.
+| 경로 | 확인 내용 |
+|---|---|
+| `heven_carla_bringup/topic_contract.py` | 원본 토픽 이름 |
+| `heven_carla_bringup/sensor_gate.py` | 준비 판정 대상·메시지·timestamp 조건 |
+| `heven_carla_bringup/readiness_monitor.py` | 원본 센서 주파수 표시 |
+| `heven_carla_bringup/config_validator.py` | 기본 센서 전용 프로필 검사 규칙 |
+| `heven_carla_adapter/sensor_adapter.py` | CARLA 입력과 헤븐 출력·프레임 대응 |
+| 두 RViz 파일과 관련 테스트 | 표시 토픽과 설정 계약 |
 
-```text
-points_per_second = channels * columns_per_rotation * rotation_frequency
-32 * 1024 * 20 = 655,360 points/s
-```
+각 Python 경로는 해당 패키지의 `src/<패키지>/<패키지>/` 아래입니다.
+멀티레이트 운용은 준비 판정의 timestamp 조건을 함께 설계해야 합니다.
+현재 구성에서는 중앙만 소비하더라도 세 카메라를 센서 준비 대상에서 유지합니다.
 
-현재 32채널에서 수평 mode를 512/1024/2048 columns 중 다른 값으로 바꾸거나
-회전수를 10/20 Hz 중 다른 값으로 바꿀 때는 세 값의 관계를 다시 계산한다.
-`rotation_frequency`만 바꾸고 `points_per_second`를 그대로 두면 회전당 수평 포인트
-수가 달라진다.
+`sensor.pseudo.actor_list`는 기존 차량을 찾는 sensors-only 부착에 사용합니다.
+센서 전용 프로필은 pseudo TF/odom을 유지하고, 헤븐 시뮬레이션 프로필은 URDF·localization
+TF를 사용합니다. 두 프로필의 TF·odometry 방식을 섞지 않습니다.
 
-채널 수만 64에서 32로 바로잡는 현재 변경에서는 다음 파일만 직접 수정한다.
+## 수정 적용과 확인
 
-1. `config/heven_sensors.json`: `channels`, `points_per_second`
-2. `README.md`, `docs/PROJECT_STATUS.md`, 이 문서: 기준 사양과 계산식
-3. `test/test_config_files.py`: 기준 사양 회귀 테스트
+실행 중인 launch를 종료하고 수정한 패키지를 재빌드합니다.
+자율주행 설정을 수정한 예시는 다음과 같습니다.
 
-센서 `id`, `type`, `rotation_frequency`, `sensor_tick`과 ROS 토픽은 바뀌지 않으므로
-`topic_contract.py`, `sensor_gate.py`, `readiness_monitor.py`, RViz 설정 및
-`bridge.yaml`의 20 Hz world 설정은 수정하지 않는다.
-
-CARLA의 채널은 수직 FOV 안에 균일 분포되므로 실제 Ouster beam calibration과
-동일하다고 간주하지 않는다.
-
-## 5. IMU 수정
-
-장착 위치와 자세는 실제 IMU 측정 원점 및 축 방향을 기준으로 한다. 현재는 차체
-중심 하단의 초기값이며 모든 noise와 bias가 0이다.
-
-주요 키:
-
-```text
-sensor_tick
-noise_seed
-noise_accel_stddev_x/y/z
-noise_gyro_stddev_x/y/z
-noise_gyro_bias_x/y/z
-```
-
-실제 센서 datasheet의 noise density를 그대로 표준편차 필드에 넣으면 안 된다.
-sampling rate와 bandwidth에 따른 단위 변환이 필요하다. CARLA 기본 IMU에는 bias
-random walk, scale factor, 온도 및 진동 모델이 충분히 포함되지 않는다.
-
-## 6. GNSS 수정
-
-GNSS `spawn_point`는 실제 안테나 phase center를 기준으로 입력한다. 현재 설정은
-LiDAR 상부 안테나 위치의 초기 근사다.
-
-주요 키:
-
-```text
-sensor_tick
-noise_seed
-noise_alt_bias / noise_alt_stddev
-noise_lat_bias / noise_lat_stddev
-noise_lon_bias / noise_lon_stddev
-```
-
-NTRIP과 RTK FIX/FLOAT 상태는 이 패키지에서 구현하지 않는다. CARLA GNSS 출력은
-실제 수신기, 보정 데이터 지연 및 위성 가시성 모델의 대체물이 아니다.
-
-## 7. 센서 주기 변경
-
-현재 `bridge.yaml`은 다음과 같다.
-
-```yaml
-synchronous_mode: true
-fixed_delta_seconds: 0.05
-```
-
-따라서 world는 20 Hz이다.
-
-| `sensor_tick` | 실제 의미 | 현재 readiness에 미치는 영향 |
-|---:|---:|---|
-| `0.0` | world tick마다 발행, 20 Hz | 현재 baseline과 일치 |
-| `0.05` | 20 Hz 요청 | 주기는 같지만 현재 validator는 baseline 값 `0.0`만 허용 |
-| `0.10` | 10 Hz 요청 | 20 Hz 센서와 timestamp가 겹치는 시점에만 완전 세트 생성 |
-| `0.01` | 100 Hz 요청 | world가 20 Hz이므로 실제로 100 Hz를 만들 수 없음 |
-
-현재 validator는 초기 검증 조건을 고정하기 위해 모든 실제 센서의
-`sensor_tick=0.0`을 요구한다. 동일 20 Hz라도 `0.05`로 명시하려면
-`config_validator.py`의 규칙과 관련 테스트를 함께 수정해야 한다.
-
-IMU 100 Hz, 카메라 20 Hz, LiDAR 10 Hz로 바꾸려면 먼저
-`fixed_delta_seconds=0.01`로 world를 100 Hz로 변경하고 각 센서 tick을 각각
-`0.01`, `0.05`, `0.10`으로 설정한다. 이때 현재 `sensor_gate`의 여섯 센서
-same-stamp 판정은 공통 timestamp가 존재할 때만 완전 세트를 만든다. 정수 배 관계로
-정렬된 센서는 느린 센서 시점에 완전 세트가 생길 수 있지만, 이것이 모든 메시지를
-동기화해 준다는 뜻은 아니다. 주기와 위상이 어긋나면 readiness가 True가 되지 않을
-수도 있다. 멀티레이트 소비자는 센서별 timestamp buffer와 기준 센서 중심의 근접
-timestamp 결합으로 재설계해야 한다.
-
-## 8. 센서 추가·삭제·이름 변경
-
-JSON만 수정하면 Bridge 토픽은 생성될 수 있지만 HEVEN readiness 계약은 자동으로
-바뀌지 않는다. 다음 파일을 모두 점검한다.
-
-1. `config/heven_sensors.json`
-2. `heven_carla_bringup/topic_contract.py`
-3. `heven_carla_bringup/sensor_gate.py`
-4. `heven_carla_bringup/readiness_monitor.py`
-5. `heven_carla_bringup/config_validator.py`
-6. `config/heven_sensors.rviz`
-7. `test/test_topic_contract.py`, `test/test_config_files.py`
-
-`sensor.pseudo.actor_list`는 `spawn_sensors_only=True`가 기존 차량을 찾는 데 필요하므로
-삭제하지 않는다. `sensor.pseudo.tf`와 `sensor.pseudo.odom`도 RViz TF와 odometry를
-사용한다면 유지한다.
-
-## 9. 수정 후 적용 및 검증
-
-실행 중인 bring-up을 먼저 종료한 뒤 다음 순서로 검증한다.
-
-```bash
+~~~bash
+source /opt/ros/humble/setup.bash
+source ~/heven_ws/install/setup.bash
 cd ~/2026_heven_jj_ws
-source /opt/ros/humble/setup.bash
 
-python3 -m json.tool \
-  src/heven_carla_bringup/config/heven_sensors.json >/dev/null
-
-colcon build \
-  --symlink-install \
-  --packages-select heven_carla_bringup
-
+python3 -m json.tool src/heven_carla_adapter/config/heven_sim_sensors.json >/dev/null
+colcon build --symlink-install --packages-select heven_carla_adapter heven_carla_bringup
 source install/setup.bash
-ros2 run heven_carla_bringup heven_validate_config
-```
 
-첫 번째 터미널에서 대회용 CARLA 패키지 서버를 실행한다.
+ros2 launch heven_carla_adapter heven_autonomy.launch.py \
+  path_csv:=/absolute/path/route_lat_lon.csv
+~~~
 
-```bash
-cd ~/HEVEN_CARLA_PACKAGE
-./CarlaUE4.sh
-```
+설치된 패키지 경로는 `ros2 pkg prefix heven_carla_adapter`로 확인합니다.
+사용자 파일을 직접 읽으려면 `sensor_config:=/absolute/path/sensors.json`을 전달합니다.
+URDF는 어댑터의 설치 파일에서 읽으므로 URDF 변경 후에도 재빌드해야 합니다.
 
-서버가 `localhost:2000`에서 준비되면 새 ROS 터미널에서 실행한다.
+센서 전용 설정만 수정했다면 `heven_carla_bringup`을 재빌드하고
+`ros2 run heven_carla_bringup heven_validate_config`로 기본 설치 설정을 검사합니다.
+이 명령은 어댑터의 시뮬레이션 JSON이나 사용자 override 파일을 검사하는 명령이 아닙니다.
 
-```bash
-source /opt/ros/humble/setup.bash
-source ~/2026_heven_jj_ws/install/setup.bash
-ros2 launch heven_carla_bringup heven_bringup.launch.py
-```
-
-토픽과 readiness를 확인한다.
-
-```bash
-ros2 topic list | sort
+~~~bash
 ros2 topic echo /heven/sensors_ready --once
+ros2 topic hz /jj/sensors/camera/middle/image_raw
+ros2 topic hz /jj/sensors/lidar/points
+ros2 topic echo /jj/sensors/imu/data --once
+ros2 run tf2_ros tf2_echo base_link middle_optical_frame
+ros2 run tf2_ros tf2_echo base_link os_lidar
+~~~
 
-ros2 topic hz /carla/ego_vehicle/left_cam/image
-ros2 topic hz /carla/ego_vehicle/right_cam/image
-ros2 topic hz /carla/ego_vehicle/front_cam/image
-ros2 topic hz /carla/ego_vehicle/lidar
-ros2 topic hz /carla/ego_vehicle/imu
-ros2 topic hz /carla/ego_vehicle/gnss
-```
+영상 방향·차체 가림, LiDAR 위치, 메시지 frame_id와 timestamp를 함께 확인합니다.
+원본 센서 전용 모드에서는 위 주파수 검사 대신 `/carla/ego_vehicle/...` 토픽을 사용합니다.
 
-마지막으로 RViz와 실제 카메라 영상에서 장착 방향, 차체 가림, LiDAR 원점의 차체
-간섭, TF frame, 메시지 timestamp 및 주파수를 함께 확인한다.
+## 공식 참고
 
-## 10. 공식 참고 문서
-
-- CARLA 0.9.15 sensor attributes:
-  <https://carla.readthedocs.io/en/0.9.15/ref_sensors/>
-- CARLA ROS Bridge spawn objects 및 sensors-only 방식:
-  <https://carla.readthedocs.io/projects/ros-bridge/en/latest/carla_spawn_objects/>
+- [CARLA 0.9.15 센서 attribute](https://carla.readthedocs.io/en/0.9.15/ref_sensors/)
+- [CARLA ROS Bridge 센서 스폰](https://carla.readthedocs.io/projects/ros-bridge/en/latest/carla_spawn_objects/)

@@ -55,13 +55,14 @@ def generate_launch_description():
         DeclareLaunchArgument("start_scenario", default_value="false", description="Existing qualifier traffic manager only; leave false for the final course."),
         DeclareLaunchArgument("enable_benchmark", default_value="false", description="Integrated qualifier evaluator; leave false for the final course."),
         DeclareLaunchArgument("launch_rviz", default_value="true"),
+        DeclareLaunchArgument("rviz_config", default_value=str(adapter / "config" / "heven_autonomy.rviz")),
 
         # CARLA TimerAction/OnProcessExit callbacks resolve their launch
         # configurations later. Keep platform defaults in the outer context.
         _include(adapter, "heven_simulation.launch.py", scoped=False, **{
             name: LaunchConfiguration(name) for name in (
                 "host", "port", "ego_role_name", "adapter_config", "vehicle_config", "sensor_config",
-                "traffic_config", "enable_traffic", "start_scenario", "enable_benchmark", "launch_rviz"
+                "traffic_config", "enable_traffic", "start_scenario", "enable_benchmark", "launch_rviz", "rviz_config"
             )
         }),
         # The original HEVEN launch has no use_sim_time argument. Construct
