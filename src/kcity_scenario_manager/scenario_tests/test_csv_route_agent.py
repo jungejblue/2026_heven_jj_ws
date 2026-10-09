@@ -3,13 +3,17 @@ from enum import IntEnum
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
 
 import carla
 
 from kcity_scenario_manager.csv_route_agent import (
+    CsvRouteAgent,
+    CsvRouteAgentFailure,
     build_exact_global_plan,
     finish_reached,
     install_exact_global_plan,
+    main,
     parse_road_option,
     reconstruct_csv_waypoint,
     update_progress,
@@ -64,6 +68,35 @@ def row(index=0,**overrides):
 
 
 class CsvRouteAgentTests(unittest.TestCase):
+    def test_control_failure_brakes_and_terminates_the_owner(self):
+        brake = object()
+        error = Mock()
+        ego = SimpleNamespace(is_alive=True, apply_control=Mock())
+        agent = SimpleNamespace(
+            state='RUNNING', ego=ego, _stop_control=lambda:brake,
+            rows=[row()], progress_index=0,
+            get_logger=lambda:SimpleNamespace(error=error),
+        )
+        with self.assertRaisesRegex(CsvRouteAgentFailure, 'queue ended'):
+            CsvRouteAgent._fail(agent, 'queue ended')
+        self.assertEqual(agent.state, 'FAILED')
+        ego.apply_control.assert_called_once_with(brake)
+        self.assertIn('FAILED', error.call_args.args[0])
+
+    def test_failed_process_exits_nonzero_and_cleans_up(self):
+        module = 'kcity_scenario_manager.csv_route_agent'
+        node = Mock()
+        with patch(module + '.rclpy.init'), \
+                patch(module + '.rclpy.spin', side_effect=CsvRouteAgentFailure('failed')), \
+                patch(module + '.rclpy.ok', return_value=True), \
+                patch(module + '.rclpy.shutdown') as shutdown, \
+                patch(module + '.CsvRouteAgent', return_value=node):
+            with self.assertRaises(SystemExit) as result:
+                main([])
+        self.assertEqual(result.exception.code, 1)
+        node.destroy_node.assert_called_once_with()
+        shutdown.assert_called_once_with()
+
     def test_csv_road_lane_s_waypoint_reconstruction(self):
         waypoint=FakeWaypoint()
         fake_map=FakeMap(lambda road,lane,s:waypoint)

@@ -30,7 +30,7 @@ ros2 launch heven_carla_adapter heven_autonomy.launch.py \
 
 ~~~bash
 source /opt/ros/humble/setup.bash
-source ~/heven_ws/install/setup.bash
+source ~/heven-jj-2026/install/setup.bash
 source ~/2026_heven_jj_ws/install/setup.bash
 ros2 run kcity_benchmark benchmark_hud --ros-args -p use_sim_time:=true
 ~~~
@@ -91,6 +91,8 @@ HUD만 추가할 때는 sidecar가 아니라 `benchmark_hud`를 사용합니다.
 
 기본 위치는 `~/.ros/heven_carla/results/qualifier_YYYYMMDD_HHMMSS/`입니다.
 YAML의 `benchmark.output_root`로 변경합니다.
+같은 초에 다시 실행하면 `_01`, `_02`와 같은 접미사로 새 디렉터리를 만들며
+기존 결과를 덮어쓰지 않습니다.
 
 | 파일 | 내용 |
 |---|---|
@@ -141,6 +143,8 @@ YAML의 `benchmark.output_root`로 변경합니다.
 사용합니다. `csv_corridor`를 선택하면 설치된
 `kcity_benchmark/data/qualifier_lane_reference.json`을 사용합니다.
 이 참고 파일은 해당 route CSV에 맞춰 생성된 자료이므로 경로를 바꿀 때 함께 맞춰야 합니다.
+`xodr` 모드는 road/lane/s에서 복원한 위치와 CSV XY의 차이가 1 m 이내인지도
+확인합니다. 다른 도로 형상의 지도에서 ID만 같은 오래된 경로를 사용하지 않습니다.
 
 sidecar에서 선택할 수 있는 인자는 다음과 같습니다.
 
@@ -158,6 +162,9 @@ ros2 launch kcity_benchmark qualifier_sidecar.launch.py \
 
 헤븐 제어기 대신 `csv_route_agent`로 CARLA 기준 경로를 확인하려면 별도 실행합니다.
 카를라 서버만 실행한 상태에서 시작하며 헤븐 자율주행 launch와 함께 사용하지 않습니다.
+이 모드에는 CARLA 0.9.15의 `agents.navigation`도 필요합니다.
+[경로 도구의 PythonAPI 설정](../kcity_scenario_manager/README.md#선택-경로-도구의-pythonapi)을
+먼저 확인합니다.
 
 ~~~bash
 ros2 launch kcity_benchmark qualifier_integration.launch.py \

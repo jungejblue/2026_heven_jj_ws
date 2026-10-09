@@ -28,6 +28,10 @@ TRANSITION_OPTIONS={
 XODR_S_EPSILONS=(0.0,1e-5,-1e-5,1e-4,-1e-4,1e-3,-1e-3)
 
 
+class CsvRouteAgentFailure(RuntimeError):
+    """A braked route-test failure that must terminate the control process."""
+
+
 @dataclass(frozen=True)
 class ProgressMatch:
     index: int
@@ -415,6 +419,7 @@ class CsvRouteAgent(Node):
             f'{row["section_id"]}/{row["lane_id"]} '
             f'option={row["road_option"]}: {message}'
         )
+        raise CsvRouteAgentFailure(message)
 
     def _update_progress(self,location):
         match=update_progress(
@@ -563,6 +568,8 @@ def main(args=None):
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
+    except CsvRouteAgentFailure:
+        raise SystemExit(1) from None
     finally:
         if node is not None:
             node.destroy_node()

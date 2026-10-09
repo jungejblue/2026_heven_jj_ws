@@ -10,8 +10,9 @@ CARLA 차량에 전달합니다. 헤븐의 Kalman·planner·PID와 최소 2 m �
 ## 빌드
 
 ROS 2 Humble, CARLA 0.9.15와 ROS Python에서 사용 가능한 CARLA API를 준비합니다.
-이 문서는 헤븐 소스를 `~/heven_ws/src/` 아래에 둔 colcon 워크스페이스를 가정합니다.
-기존 헤븐 워크스페이스가 있으면 `HEVEN_WS` 경로를 바꿉니다.
+아래 예시는 헤븐 저장소를 `~/heven-jj-2026`에 둡니다. 원본처럼 저장소 루트에
+`jj_*` 패키지가 있어도, 별도 워크스페이스의 `src/` 아래에 있어도 사용할 수 있습니다.
+`HEVEN_WS`는 `colcon build`를 실행하고 `install/`을 생성할 디렉터리로 지정합니다.
 
 필요한 헤븐 패키지는 `jj_interface`, `ublox_msgs`, `jj_localization`,
 `jj_planner`, `jj_control`, `jj_vehicle_driver`입니다. 브릿지 저장소에는 이 소스가
@@ -19,12 +20,15 @@ ROS 2 Humble, CARLA 0.9.15와 ROS Python에서 사용 가능한 CARLA API를 준
 
 ~~~bash
 source /opt/ros/humble/setup.bash
-HEVEN_WS="$HOME/heven_ws"
+HEVEN_WS="$HOME/heven-jj-2026"
 BRIDGE_WS="$HOME/2026_heven_jj_ws"
 
 cd "$HEVEN_WS"
 rosdep update
-rosdep install --from-paths src --ignore-src --rosdistro humble -r -y
+mapfile -t HEVEN_PACKAGE_PATHS < <(colcon list \
+  --packages-up-to jj_localization jj_planner jj_control --paths-only)
+rosdep install --from-paths "${HEVEN_PACKAGE_PATHS[@]}" \
+  --ignore-src --rosdistro humble --skip-keys ament_python -r -y
 colcon build --symlink-install --packages-up-to jj_localization jj_planner jj_control
 source install/setup.bash
 
@@ -38,12 +42,18 @@ source install/setup.bash
 브릿지의 전체 `src`에 rosdep을 실행하기 전에 헤븐 install을 source해야
 설치된 헤븐 패키지를 의존성으로 찾을 수 있습니다. 시나리오 도구에는 PyYAML·NumPy·NetworkX,
 평가 HUD에는 pygame이 필요합니다.
+`colcon list`는 선택한 헤븐 패키지와 의존 패키지의 실제 경로를 넘기므로 존재하지 않는
+`src/`를 가정하지 않습니다. `jj_description`, `jj_data`, `jj_vehicle_driver`도
+의존 관계를 따라 빌드되며 `ublox_msgs`는 ROS 의존성으로 설치합니다.
+원본 헤븐 manifest의 `ament_python` 의존성 이름은 rosdep에서 제외합니다.
+`ament_python`은 colcon의 build type이며 설치할 ROS 패키지 이름이 아닙니다.
+이 옵션은 헤븐 소스 수정 없이 의존성을 설치하기 위한 것입니다.
 
 새 터미널에서도 다음 순서로 source합니다.
 
 ~~~bash
 source /opt/ros/humble/setup.bash
-source ~/heven_ws/install/setup.bash
+source ~/heven-jj-2026/install/setup.bash
 source ~/2026_heven_jj_ws/install/setup.bash
 ~~~
 

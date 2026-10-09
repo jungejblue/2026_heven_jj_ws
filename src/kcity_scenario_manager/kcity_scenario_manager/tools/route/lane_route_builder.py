@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 from datetime import datetime
 import math
@@ -1227,12 +1228,20 @@ class LaneRouteBuilder(Node):
 
 def main(args=None):
     cli_args=list(sys.argv[1:] if args is None else args)
-    write_flag='--write-exit-edges' in cli_args
-    cli_args=[arg for arg in cli_args if arg!='--write-exit-edges']
-    rclpy.init(args=cli_args)
+    parser=argparse.ArgumentParser(
+        description=__doc__,
+        epilog=("Set ROS parameters with --ros-args -p config_file:=/path/qualifier.yaml "
+                "-p output_csv:=/path/route.csv. Other parameters include preview, "
+                "sampling_resolution_m, expected_map, and route validation thresholds. "
+                "Without output_csv, benchmark.route_csv selects the destination."),
+    )
+    parser.add_argument('--write-exit-edges',action='store_true',
+                        help='update configured trigger exit edges after successful validation')
+    options,ros_args=parser.parse_known_args(cli_args)
+    rclpy.init(args=ros_args)
     node=None
     try:
-        node=LaneRouteBuilder(cli_write_exit_edges=write_flag)
+        node=LaneRouteBuilder(cli_write_exit_edges=options.write_exit_edges)
     finally:
         if node is not None:
             node.destroy_node()

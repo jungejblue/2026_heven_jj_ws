@@ -38,12 +38,22 @@ Blueprint가 있어야 합니다. 헤븐 자율주행에는 별도로 빌드된 
 
 ~~~bash
 cd ~
-git clone --recurse-submodules https://github.com/jungejblue/2026_heven_jj_ws.git
+git clone https://github.com/jungejblue/2026_heven_jj_ws.git
 cd ~/2026_heven_jj_ws
+git submodule update --init --recursive
 git submodule status --recursive
 ~~~
 
-이미 clone한 저장소에서는 다음 명령으로 등록된 submodule을 받습니다.
+첫 번째 명령은 **이 브릿지 저장소 자체**를 받습니다. 그다음 submodule 명령은
+외부 의존성만 받습니다. 이 저장소를 자기 자신의 submodule로 추가하지 않습니다.
+
+| 저장 위치 | 원격 저장소 | 관리 방식 |
+|---|---|---|
+| `~/2026_heven_jj_ws` | `jungejblue/2026_heven_jj_ws` | 본 저장소 |
+| `src/carla-ros-bridge` | `ttgamage/carla-ros-bridge` | 본 저장소가 지정한 submodule 커밋 |
+| `src/carla-ros-bridge/carla_msgs` | `carla-simulator/ros-carla-msgs` | ROS Bridge가 지정한 중첩 submodule 커밋 |
+
+이미 clone한 저장소에서도 다음 명령으로 등록된 외부 의존성을 받습니다.
 
 ~~~bash
 cd ~/2026_heven_jj_ws
@@ -61,13 +71,20 @@ ROS 터미널의 system Python에서 패키지 서버와 같은 CARLA API가 imp
 source /opt/ros/humble/setup.bash
 /usr/bin/python3 - <<'PY'
 import carla
+from importlib.metadata import version
 print("CARLA module:", carla.__file__)
+print("CARLA distribution:", version("carla"))
 print("Client API:", carla.Client("localhost", 2000).get_client_version())
+assert version("carla") == "0.9.15", "ROS Bridge requires CARLA 0.9.15"
 PY
 ~~~
 
 Client API는 `0.9.15`를 사용합니다. import가 실패하면 카를라 패키지와 함께 제공된
-Python 3.10용 wheel/egg를 설치하거나 해당 파일을 ROS 터미널의 `PYTHONPATH`에 노출합니다.
+Python 3.10용 wheel을 `/usr/bin/python3 -m pip install`에 실제 파일 경로를 전달해
+설치합니다. 압축된 `.whl` 파일을 `PYTHONPATH`에 추가하는 것만으로는 native 모듈을
+불러올 수 없습니다. 호환되는 egg를 사용한다면 해당 배포본의 egg 경로 설정 방법을 따릅니다.
+이 ROS Bridge는 `carla` 배포 메타데이터의 버전도 확인합니다. 모듈 파일만 복사해
+import를 가능하게 하는 방식 대신 배포 메타데이터가 포함된 wheel/egg를 사용합니다.
 
 ## 센서만 확인하기
 
@@ -144,6 +161,7 @@ ros2 topic hz /carla/ego_vehicle/gnss
 cd ~/2026_heven_jj_ws
 source /opt/ros/humble/setup.bash
 source install/setup.bash
+sudo apt install python3-pygame
 colcon build --symlink-install --packages-up-to carla_manual_control
 source install/setup.bash
 ros2 run carla_manual_control carla_manual_control --ros-args \
@@ -153,6 +171,8 @@ ros2 run carla_manual_control carla_manual_control --ros-args \
 
 Pygame 창에서 `B`로 manual override를 켜고 `W/S`로 가속·제동,
 `A/D`로 조향합니다. `Space`는 주차 브레이크, `Q`는 전진·후진 전환입니다.
+고정된 upstream 수동 조작 창은 `1024×768`이어서 `1280×720` 중앙 영상의 오른쪽이
+잘릴 수 있습니다. 전체 영상은 RViz의 Image 표시에서 확인합니다.
 헤븐 자율주행이나 별도 차량을 스폰하는 PythonAPI `manual_control.py`와 함께 실행하지 않습니다.
 
 ## 헤븐 자율주행 실행하기
@@ -167,7 +187,7 @@ Pygame 창에서 `B`로 manual override를 켜고 `W/S`로 가속·제동,
 
 ~~~bash
 source /opt/ros/humble/setup.bash
-source ~/heven_ws/install/setup.bash
+source ~/heven-jj-2026/install/setup.bash
 source ~/2026_heven_jj_ws/install/setup.bash
 ros2 launch heven_carla_adapter heven_autonomy.launch.py \
   course:=qualifying controller:=profile_stanley \
@@ -215,7 +235,6 @@ ros2 launch heven_carla_adapter heven_autonomy.launch.py \
 | 센서 준비가 false | 센서 6개 ID와 `sensor_tick=0.0`, 원본 토픽 수신 확인 |
 | localization odometry 대기 | 유효 GNSS·IMU·조향 피드백과 2 m 직진 조건 확인 |
 | 설정 수정이 반영되지 않음 | 재빌드/source 후 `ros2 pkg prefix 패키지명`으로 설치 경로 확인 |
-| `LogError` import 오류 | 현재 코드 재빌드 후 올바른 install을 source했는지 확인 |
 
 센서 위치·주기 변경은 [센서 가이드](src/heven_carla_bringup/docs/SENSOR_CONFIG_GUIDE.md)를
 따릅니다. CARLA LiDAR와 가상 GNSS/RTK는 실제 센서·보정 수신기의 모든 물리 특성을 재현하지 않습니다.

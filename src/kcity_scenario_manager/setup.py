@@ -31,6 +31,7 @@ setup(
     maintainer_email="maintainer@example.com",
     description="K-City qualifier/final scenarios and ROS Bridge ego control",
     license="MIT",
+    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "qualifier_scenario_manager = kcity_scenario_manager.qualifier_manager:main",

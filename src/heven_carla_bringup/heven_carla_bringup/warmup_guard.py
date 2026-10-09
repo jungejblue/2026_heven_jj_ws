@@ -61,7 +61,12 @@ class WarmupGuard(Node):
         )
 
     def _on_clock(self, message: Clock) -> None:
-        self.latest_clock_ns = _clock_nanoseconds(message)
+        stamp = _clock_nanoseconds(message)
+        if self.latest_clock_ns is not None and stamp < self.latest_clock_ns:
+            self.start_clock_ns = None
+            self.completed = False
+            self.get_logger().info("Simulation clock restarted; vehicle warm-up timing reset.")
+        self.latest_clock_ns = stamp
         self._try_start()
 
     def _on_vehicle_status(self, _: CarlaEgoVehicleStatus) -> None:

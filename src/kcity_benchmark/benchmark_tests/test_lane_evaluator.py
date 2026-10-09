@@ -70,6 +70,62 @@ def load_carla_api(test_case):
 
 
 class LaneEvaluatorRegressionTests(unittest.TestCase):
+    def test_lane_change_queries_full_configured_behind_and_ahead_distance(self):
+        for source_lane, target_lane, expected_stations in (
+            (-1, -2, (93.0, 113.0)),
+            (1, 2, (87.0, 107.0)),
+        ):
+            with self.subTest(source_lane=source_lane):
+                evaluator = LaneGeometryEvaluator.__new__(LaneGeometryEvaluator)
+                evaluator.behind_m, evaluator.ahead_m = 8.0, 12.0
+                evaluator.rows = [
+                    dict(road_id=1, section_id=0, lane_id=source_lane,
+                         opendrive_s=100.0, route_s_m=0.0),
+                    dict(road_id=1, section_id=0, lane_id=target_lane,
+                         opendrive_s=105.0, route_s_m=5.0),
+                ]
+                stations = {source_lane:[], target_lane:[]}
+                def lookup(_road, _section, lane, station):
+                    stations[lane].append(station)
+                    return None
+                evaluator._lookup_exact = lookup
+                evaluator.carla = SimpleNamespace(LaneType=SimpleNamespace(Driving='Driving'))
+                evaluator._lane_change_polygons(
+                    dict(source_index=0, target_index=1), route_s=1.0
+                )
+                for lane in (source_lane, target_lane):
+                    self.assertEqual(len(stations[lane]), 17)
+                    self.assertEqual((min(stations[lane]), max(stations[lane])),
+                                     expected_stations)
+
+    def test_same_xodr_identifiers_on_changed_map_reject_stale_csv_geometry(self):
+        driving = "Driving"
+        waypoint = SimpleNamespace(
+            road_id=1, section_id=0, lane_id=-1, lane_type=driving,
+            transform=SimpleNamespace(location=SimpleNamespace(x=100.0, y=0.0)),
+            next=lambda _:[],
+        )
+        carla_map = SimpleNamespace(get_waypoint_xodr=lambda *_: waypoint)
+        row = dict(index=0, road_id=1, section_id=0, lane_id=-1,
+                   opendrive_s=1.0, route_s_m=0.0, x=0.0, y=0.0)
+        carla = SimpleNamespace(LaneType=SimpleNamespace(Driving=driving))
+        with self.assertRaisesRegex(RuntimeError, "index=0.*100.000m from CSV x/y"):
+            LaneGeometryEvaluator(carla_map, carla, [row, dict(row, index=1)])
+
+    def test_current_xodr_waypoint_within_csv_tolerance_is_accepted(self):
+        driving = "Driving"
+        waypoint = SimpleNamespace(
+            road_id=1, section_id=0, lane_id=-1, lane_type=driving,
+            transform=SimpleNamespace(location=SimpleNamespace(x=0.02, y=0.0)),
+        )
+        evaluator = LaneGeometryEvaluator.__new__(LaneGeometryEvaluator)
+        evaluator.map = SimpleNamespace(get_waypoint_xodr=lambda *_: waypoint)
+        evaluator.carla = SimpleNamespace(LaneType=SimpleNamespace(Driving=driving))
+        evaluator.waypoint_tolerance_m = 1.0
+        row = dict(index=0, road_id=1, section_id=0, lane_id=-1,
+                   opendrive_s=1.0, x=0.0, y=0.0)
+        self.assertIs(evaluator._route_waypoint(row), waypoint)
+
     @classmethod
     def setUpClass(cls):
         cls.fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))

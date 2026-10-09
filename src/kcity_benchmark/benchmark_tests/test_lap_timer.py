@@ -14,6 +14,29 @@ def box(center):
 
 
 class LapTimerTests(unittest.TestCase):
+    def test_near_exit_sample_does_not_start_early_or_consume_crossing(self):
+        timer = LapTimer(box(0.0), box(10.0))
+        timer.observe(1.0, loc(0.90))
+        self.assertIsNone(timer.observe(2.0, loc(0.97)))
+        self.assertEqual(timer.state, "armed")
+        self.assertEqual(timer.observe(3.0, loc(1.10)), "START")
+        self.assertAlmostEqual(timer.start_sim_time_sec, 2.0 + 0.03 / 0.13)
+
+    def test_exact_exit_plane_fraction_for_every_direction(self):
+        for edge, previous, current in (
+            ("+x", loc(0.97), loc(1.10)),
+            ("-x", loc(-0.97), loc(-1.10)),
+            ("+y", loc(0.0, 0.97), loc(0.0, 1.10)),
+            ("-y", loc(0.0, -0.97), loc(0.0, -1.10)),
+        ):
+            with self.subTest(edge=edge):
+                trigger = box(0.0)
+                trigger.exit_edge = edge
+                fraction = trigger.exit_crossing_fraction(previous, current)
+                self.assertIsNotNone(fraction)
+                self.assertAlmostEqual(fraction, 0.03 / 0.13)
+                self.assertIsNone(trigger.exit_crossing_fraction(current, previous))
+
     def test_spawn_inside_start_remains_armed_until_exit_edge(self):
         timer = LapTimer(box(0.0), box(10.0))
         timer.observe(20.0, loc(0.0))

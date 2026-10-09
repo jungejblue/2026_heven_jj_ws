@@ -20,6 +20,7 @@ setup(
     maintainer_email='heven@example.com',
     description='K-City competition benchmark',
     license='Apache-2.0',
+    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'benchmark_runner = kcity_benchmark.benchmark_runner:main',

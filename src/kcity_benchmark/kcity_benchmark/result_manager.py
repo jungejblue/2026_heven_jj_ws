@@ -12,8 +12,17 @@ from typing import Dict, List
 class ResultManager:
     def __init__(self, suite: str, output_root: str):
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.run_dir = Path(output_root).expanduser() / f"{suite}_{stamp}"
-        self.run_dir.mkdir(parents=True, exist_ok=True)
+        root = Path(output_root).expanduser()
+        root.mkdir(parents=True, exist_ok=True)
+        suffix = 0
+        while True:
+            name = f"{suite}_{stamp}" + (f"_{suffix:02d}" if suffix else "")
+            self.run_dir = root / name
+            try:
+                self.run_dir.mkdir()
+                break
+            except FileExistsError:
+                suffix += 1
 
         self.events_path = self.run_dir / "events.csv"
         self.raw_path = self.run_dir / "raw.csv"

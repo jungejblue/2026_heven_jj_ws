@@ -1,13 +1,10 @@
-"""BP_HEVEN ego management helper for the ROS Bridge test launch.
+"""Vehicle blueprint and spawn-plan helpers for K-City tools.
 
-원칙
-----
-- qualifier/final scenario managers never spawn or drive ego.
-- ego_manager alone may spawn a vehicle when none exists.
-- 이미 BP_HEVEN이 존재하면 새로 만들지 않고 기존 actor를 사용한다.
-- qualifier spawn은 suite route의 START lane에서 topology previous()를
-  따라간 waypoint의 위치와 yaw를 사용한다.
-- legacy nearest_driving_waypoint와 explicit transform 모드도 유지한다.
+The qualifier guard checks the external Bridge spawn configuration against an
+upstream START-lane plan built with Waypoint.previous(). Deployed launches let
+CARLA ROS Bridge spawn the ego; scenario managers only observe it. Direct
+spawn helpers and the nearest-driving-waypoint/explicit-transform modes remain
+available for callers outside that launch lifecycle.
 """
 
 from __future__ import annotations
@@ -599,7 +596,7 @@ def make_spawn_transform(
         return transform, "explicit transform"
 
     raise ValueError(
-        "manual_control.spawn.mode는 "
+        "ego.spawn.mode는 "
         "'before_start_trigger', 'nearest_driving_waypoint' 또는 "
         "'transform'이어야 합니다: "
         f"{mode}"

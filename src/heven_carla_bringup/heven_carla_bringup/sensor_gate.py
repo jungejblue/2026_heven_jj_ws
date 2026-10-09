@@ -16,6 +16,7 @@ from rclpy.qos import (
     ReliabilityPolicy,
     qos_profile_sensor_data,
 )
+from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import Image, Imu, NavSatFix, PointCloud2
 from std_msgs.msg import Bool
 
@@ -74,6 +75,10 @@ class SensorGate(Node):
         self.completed_stamps: Set[Stamp] = set()
         self.complete_set_count = 0
         self.ready = self.discard_complete_sets == 0
+        self._last_clock_ns = None
+        self._subscriptions.append(
+            self.create_subscription(Clock, "/clock", self._on_clock, 10)
+        )
         self.create_timer(1.0, self._publish_state)
         self._publish_state()
 
@@ -86,6 +91,17 @@ class SensorGate(Node):
             self.get_logger().info(
                 "discard_complete_sets=0; HEVEN sensor suite is immediately ready."
             )
+
+    def _on_clock(self, message: Clock) -> None:
+        stamp = int(message.clock.sec) * 1_000_000_000 + int(message.clock.nanosec)
+        if self._last_clock_ns is not None and stamp < self._last_clock_ns:
+            self.pending.clear()
+            self.completed_stamps.clear()
+            self.complete_set_count = 0
+            self.ready = self.discard_complete_sets == 0
+            self._publish_state()
+            self.get_logger().info("Simulation clock restarted; sensor warm-up state reset.")
+        self._last_clock_ns = stamp
 
     def _on_measurement(self, name: str, message) -> None:
         if self.ready:

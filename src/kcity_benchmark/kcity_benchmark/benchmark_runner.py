@@ -604,7 +604,7 @@ class CompetitionBenchmark(Node):
             return "moderate"
         return "severe"
 
-    def consume_collisions(self, now: float):
+    def consume_collisions(self, now: float, end_time: Optional[float] = None):
         if not self.pending_collisions:
             return
 
@@ -618,6 +618,8 @@ class CompetitionBenchmark(Node):
             actor_id = collision["other_actor_id"]
             event_t = collision["sim_time"]
             if self.start_t is not None and event_t < self.start_t:
+                continue
+            if end_time is not None and event_t > end_time:
                 continue
 
             # Deduplicate repeated collision callbacks with the same object.
@@ -679,7 +681,8 @@ class CompetitionBenchmark(Node):
     # ---------------------------------------------------------
     # Comfort / dynamics
     # ---------------------------------------------------------
-    def evaluate_dynamics(self, now: float, dt: float, transform):
+    def evaluate_dynamics(self, now: float, dt: float, transform,
+                          evaluated_dt: Optional[float] = None):
         accel = self.ego.get_acceleration()
         forward = transform.get_forward_vector()
         right = transform.get_right_vector()
@@ -730,9 +733,10 @@ class CompetitionBenchmark(Node):
                 and abs(yaw_accel) <= th["yaw_accel_abs_max"]
             )
 
-            self.comfort_evaluated_time_sec += dt
+            duration = dt if evaluated_dt is None else max(0.0, min(dt, evaluated_dt))
+            self.comfort_evaluated_time_sec += duration
             if comfortable:
-                self.comfortable_time_sec += dt
+                self.comfortable_time_sec += duration
 
         self.prev_accel_vec = carla.Vector3D(accel.x, accel.y, accel.z)
         self.prev_long_accel = long_accel
@@ -1376,6 +1380,7 @@ class CompetitionBenchmark(Node):
 
             snapshot = self.world.get_snapshot()
             now = float(snapshot.timestamp.elapsed_seconds)
+            sample_sim_time = now
             self.latest_sim_time = now
 
             transform = self.ego.get_transform()
@@ -1429,6 +1434,26 @@ class CompetitionBenchmark(Node):
                     category="run",
                 )
 
+            # A line crossing may precede the snapshot that observes it. Use
+            # that interpolated time to decide FINISH versus TIMEOUT and to
+            # exclude the tail of the sample interval from duration metrics.
+            sample_dt = dt
+            deadline = self.start_t + self.time_limit_sec
+            ending_status = None
+            if crossing == "FINISH" and self.lap_timer.finish_sim_time_sec <= deadline:
+                now = self.lap_timer.finish_sim_time_sec
+                ending_status = "FINISH"
+            elif now >= deadline:
+                now = deadline
+                ending_status = "TIMEOUT"
+            elif not self.finish_trigger.enabled and self.should_finish(loc):
+                ending_status = "FINISH"
+            interval_start = self.start_t if self.prev_sample_t is None else max(
+                self.start_t, self.prev_sample_t
+            )
+            dt = max(0.0, now - interval_start)
+            self.latest_sim_time = now
+
             if route_center_distance is not None:
                 self.route_center_distances.append(route_center_distance)
             if planner_tracking_error is not None:
@@ -1444,7 +1469,7 @@ class CompetitionBenchmark(Node):
                 return
 
             # Safety collision scoring.
-            self.consume_collisions(now)
+            self.consume_collisions(now, end_time=now if ending_status else None)
 
             # Mission / official penalty evaluation.
             self.process_missions(now, loc, speed)
@@ -1463,12 +1488,12 @@ class CompetitionBenchmark(Node):
                 yaw_rate,
                 yaw_accel,
                 comfortable,
-            ) = self.evaluate_dynamics(now, dt, transform)
+            ) = self.evaluate_dynamics(now, sample_dt, transform, evaluated_dt=dt)
 
             overspeed = self.evaluate_speed(dt, speed)
 
             self.results.log_raw(
-                sim_time=now,
+                sim_time=sample_sim_time,
                 transform=transform,
                 speed=speed,
                 route_progress=progress,
@@ -1490,16 +1515,8 @@ class CompetitionBenchmark(Node):
             self.pending_collisions.clear()
             self.prev_sample_t = now
 
-            elapsed = now - self.start_t
-
-            if elapsed >= self.time_limit_sec:
-                self.finish_run(now, "TIMEOUT")
-                return
-
-            if crossing == "FINISH" or (
-                not self.finish_trigger.enabled and self.should_finish(loc)
-            ):
-                self.finish_run(now, "FINISH")
+            if ending_status is not None:
+                self.finish_run(now, ending_status)
 
         except Exception as exc:
             self.get_logger().error(f"Benchmark error: {exc}")

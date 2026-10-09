@@ -314,13 +314,16 @@ class LaneGeometryEvaluator(WheelPositionProvider):
 
     def __init__(self, carla_map, carla_module, route_rows,
                  boundary_tolerance_m=0.01, corridor_behind_m=8.0,
-                 corridor_ahead_m=12.0):
+                 corridor_ahead_m=12.0, waypoint_tolerance_m=1.0):
         self.map = carla_map
         super().__init__(carla_module)
         self.rows = list(route_rows)
         self.tolerance_m = float(boundary_tolerance_m)
         self.behind_m = float(corridor_behind_m)
         self.ahead_m = float(corridor_ahead_m)
+        self.waypoint_tolerance_m = float(waypoint_tolerance_m)
+        if not math.isfinite(self.waypoint_tolerance_m) or self.waypoint_tolerance_m <= 0:
+            raise ValueError("waypoint_tolerance_m must be finite and positive")
         if self.tolerance_m < 0.0 or self.tolerance_m > 0.05:
             raise ValueError("boundary_tolerance_m must be in [0, 0.05] m")
         self.matcher = RouteMatcher(self.rows)
@@ -346,6 +349,15 @@ class LaneGeometryEvaluator(WheelPositionProvider):
                 continue
             if not _is_driving(waypoint, self.carla):
                 continue
+            location = waypoint.transform.location
+            distance = math.hypot(float(location.x) - float(row["x"]),
+                                  float(location.y) - float(row["y"]))
+            if distance > self.waypoint_tolerance_m:
+                raise RuntimeError(
+                    f"qualifier route index={row['index']}: reconstructed waypoint "
+                    f"is {distance:.3f}m from CSV x/y; "
+                    f"waypoint_tolerance_m={self.waypoint_tolerance_m:.3f}"
+                )
             return waypoint
         raise RuntimeError(
             "qualifier route cannot be resolved exactly on current map at "
@@ -548,7 +560,7 @@ class LaneGeometryEvaluator(WheelPositionProvider):
         # Sample both adjacent lanes at the same OpenDRIVE s values. CSV
         # transition rows can be several metres apart longitudinally, so their
         # two row centers must not be treated as simultaneous lane centers.
-        for progress_m in [self.ahead_m * i / 16.0 - self.behind_m
+        for progress_m in [(self.behind_m + self.ahead_m) * i / 16.0 - self.behind_m
                            for i in range(17)]:
             sample_s = source_s + direction * progress_m
             source_wp = self._lookup_exact(road_id, section_id, source_lane, sample_s)

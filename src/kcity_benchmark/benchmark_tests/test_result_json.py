@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
+from datetime import datetime
 
 from kcity_benchmark.result_manager import ResultManager
 from kcity_benchmark.scoring import build_scorecard
@@ -9,6 +11,27 @@ from kcity_benchmark.score_schema import score_details
 
 
 class ResultJsonTests(unittest.TestCase):
+    def test_same_timestamp_runs_preserve_previous_files(self):
+        with TemporaryDirectory() as directory, patch(
+            "kcity_benchmark.result_manager.datetime"
+        ) as clock:
+            clock.now.return_value = datetime(2026, 10, 9, 12, 0, 0)
+            first = ResultManager("qualifier", directory)
+            first.add_event(1.0, "FIRST_RUN")
+            first.close()
+            first_events = first.events_path.read_bytes()
+            (first.run_dir / "result.json").write_text('{"run": "first"}')
+            second = ResultManager("qualifier", directory)
+            second.add_event(2.0, "SECOND_RUN")
+            second.close()
+            third = ResultManager("qualifier", directory)
+            third.close()
+            self.assertEqual(len({first.run_dir, second.run_dir, third.run_dir}), 3)
+            self.assertEqual(first.events_path.read_bytes(), first_events)
+            self.assertEqual((first.run_dir / "result.json").read_text(),
+                             '{"run": "first"}')
+            self.assertIn("SECOND_RUN", second.events_path.read_text())
+
     def test_efficiency_unavailable_keeps_quality_and_renormalizes(self):
         card, _ = build_scorecard(
             route_completion_pct=100.0, finished_normally=True,

@@ -22,6 +22,7 @@ setup(
     maintainer_email="heven@example.com",
     description="CARLA 0.9.15 ROS 2 Humble sensor bring-up for vehicle.heven.ev.",
     license="MIT",
+    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "heven_warmup_guard = heven_carla_bringup.warmup_guard:main",

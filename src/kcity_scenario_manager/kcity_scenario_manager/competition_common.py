@@ -50,10 +50,13 @@ class TriggerBox:
         if not self.enabled or prev_loc is None: return None
         px,py,pz=self.local_coords(prev_loc); cx,cy,cz=self.local_coords(curr_loc)
         ps,limit,plat,latlim=self._edge(px,py); cs,_,clat,_=self._edge(cx,cy)
-        if not (ps < limit-tolerance_m and cs >= limit-tolerance_m): return None
+        # Timing uses the actual exit plane. Tolerance applies only to the
+        # lateral/vertical bounds, so an approach within 5 cm cannot consume
+        # the crossing before the evaluation point reaches the plane.
+        if not (ps < limit and cs >= limit): return None
         ds=cs-ps
         if abs(ds)<1e-9: return None
-        a=max(0.0,min(1.0,(limit-ps)/ds))
+        a=(limit-ps)/ds
         lat=plat+a*(clat-plat); z=pz+a*(cz-pz)
         if abs(lat)<=latlim+tolerance_m and abs(z)<=self.extent_z+tolerance_m:
             return a

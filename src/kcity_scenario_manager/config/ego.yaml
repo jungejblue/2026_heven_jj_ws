@@ -1,23 +1,9 @@
-# Source of truth for ego spawn and ROS Bridge manual-control UX.
+# Spawn-plan settings used by qualifier integration preflight.
+# Vehicle spawning is configured in qualifier_vehicle.json and owned by ROS Bridge.
 # Qualifier/final trigger, route, mission and scoring data live in their suite YAML.
-carla:
-  host: 127.0.0.1
-  port: 2000
-  timeout_sec: 10.0
 ego:
-  role_name: ego_vehicle
-  spawn_if_missing: true
-  destroy_spawned_on_exit: false
-  blueprint_id: ''
-  blueprint_contains: heven
   spawn:
     mode: before_start_trigger
     back_distance_m: 8.0
     minimum_trigger_clearance_m: 2.0
     z_offset: 0.5
-    retry_z_offsets: [0.0, 0.5, 1.0, 1.5]
-wasd:
-  max_throttle: 0.35
-  max_steer: 0.65
-  fps: 30
-  steer_ramp_per_sec: 2.6

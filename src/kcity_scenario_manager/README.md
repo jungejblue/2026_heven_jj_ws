@@ -146,10 +146,33 @@ CARLA 지도의 중심이나 georeference와 같은 점으로 가정하지 않�
 
 ## 다른 도구
 
+### 선택 경로 도구의 PythonAPI
+
+`lane_route_builder`와 `csv_route_agent`는 `carla` 모듈 외에 CARLA 0.9.15
+PythonAPI의 `agents.navigation`이 필요합니다. 일반적인 `carla` wheel만 설치해도
+이 Python 소스는 포함되지 않을 수 있습니다. 헤븐 자율주행 어댑터에는 이 추가 설정이
+필요하지 않습니다.
+
+카를라 패키지에 `PythonAPI/carla/agents/`가 포함되어 있으면 다음처럼 설정합니다.
+포함되어 있지 않으면 CARLA 0.9.15 소스 또는 배포본의 해당 디렉터리를 준비하고
+`CARLA_ROOT`를 그 위치에 맞춥니다.
+
+~~~bash
+export CARLA_ROOT="$HOME/HEVEN_CARLA_PACKAGE"
+export PYTHONPATH="$CARLA_ROOT/PythonAPI/carla${PYTHONPATH:+:$PYTHONPATH}"
+python3 - <<'PY'
+from agents.navigation.global_route_planner import GlobalRoutePlanner
+from agents.navigation.local_planner import LocalPlanner
+print("CARLA route agents available")
+PY
+~~~
+
+### 실행 파일
+
 | 실행 파일 | 용도 |
 |---|---|
 | `config_check` | YAML 구역·신호 참조·경로·평가 설정 검사 |
-| `lane_route_builder` | 도로 waypoint 기반 경로 생성·검증, `--help`에서 인자 확인 |
+| `lane_route_builder` | 도로 waypoint 기반 경로 생성·검증, `--help`에서 CLI·ROS 파라미터 안내 확인 |
 | `route_recorder` | 차량 CARLA XY 기록, Ctrl+C에서 YAML 저장 |
 | `qualifier_ego_tool`, `qualifier_integration_guard` | CSV 경로 테스트의 차량·실행 상태 관리 |
 | `csv_route_agent` | 별도 CARLA CSV 경로 추종 |

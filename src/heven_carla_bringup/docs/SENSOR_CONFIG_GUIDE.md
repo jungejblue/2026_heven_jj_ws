@@ -179,7 +179,7 @@ TF를 사용합니다. 두 프로필의 TF·odometry 방식을 섞지 않습니�
 
 ~~~bash
 source /opt/ros/humble/setup.bash
-source ~/heven_ws/install/setup.bash
+source ~/heven-jj-2026/install/setup.bash
 cd ~/2026_heven_jj_ws
 
 python3 -m json.tool src/heven_carla_adapter/config/heven_sim_sensors.json >/dev/null

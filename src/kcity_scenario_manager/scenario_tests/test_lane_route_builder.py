@@ -2,6 +2,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
+from contextlib import redirect_stdout
+from io import StringIO
 
 import carla
 
@@ -14,6 +17,7 @@ from kcity_scenario_manager.tools.route.lane_route_builder import (
     directed_topology_connection,
     generate_preview_lines,
     merge_route_segments,
+    main,
     parse_required_triggers,
     parse_route_anchors,
     project_route_anchor,
@@ -69,6 +73,33 @@ def trigger(center_x,center_y=0.0,extent_x=0.4,extent_y=0.4):
 
 
 class LaneRouteBuilderTests(unittest.TestCase):
+    def test_cli_help_does_not_initialize_ros_or_require_config(self):
+        output = StringIO()
+        module = 'kcity_scenario_manager.tools.route.lane_route_builder'
+        with patch(module + '.rclpy.init') as initialize, \
+                patch(module + '.LaneRouteBuilder') as builder, redirect_stdout(output):
+            with self.assertRaises(SystemExit) as result:
+                main(['--help'])
+        self.assertEqual(result.exception.code, 0)
+        initialize.assert_not_called()
+        builder.assert_not_called()
+        self.assertIn('--write-exit-edges', output.getvalue())
+        self.assertIn('config_file', output.getvalue())
+        self.assertIn('output_csv', output.getvalue())
+
+    def test_cli_write_flag_preserves_ros_arguments(self):
+        module = 'kcity_scenario_manager.tools.route.lane_route_builder'
+        ros_args = ['--ros-args', '-p', 'config_file:=/tmp/qualifier.yaml',
+                    '-p', 'preview:=false']
+        node = Mock()
+        with patch(module + '.rclpy.init') as initialize, \
+                patch(module + '.rclpy.shutdown'), \
+                patch(module + '.LaneRouteBuilder', return_value=node) as builder:
+            main(['--write-exit-edges', *ros_args])
+        initialize.assert_called_once_with(args=ros_args)
+        builder.assert_called_once_with(cli_write_exit_edges=True)
+        node.destroy_node.assert_called_once_with()
+
     @classmethod
     def setUpClass(cls):
         cls.config_path=(
